@@ -14,16 +14,11 @@ const canvasSize = {
   height: window.innerHeight,
 };
 
+// GUI
+const pane = new Pane();
+
 // Scene
 const scene = new THREE.Scene();
-
-const box = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshBasicMaterial({
-    color: "red",
-  })
-);
-scene.add(box);
 
 // Camera
 const camera = new THREE.PerspectiveCamera(
@@ -44,11 +39,6 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(canvasSize.width, canvasSize.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-// GUI
-const pane = new Pane();
-
-pane.addBinding(box, "scale");
-
 // Listeners
 window.addEventListener("resize", () => {
   canvasSize.width = window.innerWidth;
@@ -59,6 +49,10 @@ window.addEventListener("resize", () => {
 
   renderer.setSize(canvasSize.width, canvasSize.height);
 });
+
+// Helpers
+const axisHelper = new THREE.AxesHelper(1);
+scene.add(axisHelper);
 
 // Render Loop
 const clock = new THREE.Clock();
@@ -72,3 +66,32 @@ const tick = () => {
   window.requestAnimationFrame(tick);
 };
 tick();
+
+const drawDebugBox = () => {
+  const height = 4;
+  const width = 4;
+  const depth = 4;
+
+  const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+
+  const edgeGeometry = new THREE.EdgesGeometry(boxGeometry);
+  const edgeMaterial = new THREE.LineBasicMaterial({
+    color: "#84cc16",
+    transparent: true,
+    opacity: 0.1,
+  });
+
+  for (let x = 0; x < depth; x++) {
+    for (let y = 0; y < height; y++) {
+      for (let z = 0; z < width; z++) {
+        const boxEdges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+
+        boxEdges.position.set(x, y, z);
+
+        scene.add(boxEdges);
+      }
+    }
+  }
+};
+
+drawDebugBox();
