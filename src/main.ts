@@ -68,9 +68,9 @@ const tick = () => {
 tick();
 
 const drawDebugBox = () => {
-  const height = 4;
-  const width = 4;
-  const depth = 4;
+  const height = 5;
+  const width = 5;
+  const depth = 5;
 
   const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
 
@@ -86,8 +86,11 @@ const drawDebugBox = () => {
       for (let z = 0; z < width; z++) {
         const boxEdges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
 
-        boxEdges.position.set(x, y, z);
+        const px = x - depth / 2 + 0.5;
+        const py = y - height / 2 + 0.5;
+        const pz = z - width / 2 + 0.5;
 
+        boxEdges.position.set(px, py, pz);
         scene.add(boxEdges);
       }
     }
