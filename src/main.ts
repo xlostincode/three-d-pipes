@@ -2,7 +2,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import "./style.css";
 import * as THREE from "three";
 import { Pane } from "tweakpane";
-import { DIRECTION_LIST, DIRECTION_MAP } from "./const";
+import { DIRECTION_LIST } from "./const";
+import { createPipe } from "./pipe";
 
 const canvasElement = document.getElementById("webgl");
 
@@ -36,7 +37,7 @@ const camera = new THREE.PerspectiveCamera(
   75,
   canvasSize.width / canvasSize.height
 );
-camera.position.x = 10;
+camera.position.x = 20;
 scene.add(camera);
 
 // Controls
@@ -66,59 +67,20 @@ const axisHelper = new THREE.AxesHelper(1);
 scene.add(axisHelper);
 
 // Custom
-const createPipe = (start: THREE.Vector3, length: number) => {
-  const directions: THREE.Vector3[] = [];
+let pipe = createPipe(new THREE.Vector3(0, 0, 0), 100);
 
-  const doesNegateDirection = (
-    vector1: THREE.Vector3,
-    vector2: THREE.Vector3
-  ) => {
-    return (
-      vector1.x + vector2.x === 0 &&
-      vector1.y + vector2.y === 0 &&
-      vector1.z + vector2.z === 0
-    );
-  };
+const pipeGeometry = new THREE.BoxGeometry(1, 1, 1);
+const pipeMaterial = new THREE.MeshBasicMaterial({
+  color: "#84cc16",
+  transparent: true,
+  opacity: 0.1,
+});
+const drawPipeSegment = (position: THREE.Vector3) => {
+  const box = new THREE.Mesh(pipeGeometry, pipeMaterial);
 
-  for (let index = 0; index < length; index++) {
-    let randomIndex = Math.floor(Math.random() * DIRECTION_LIST.length);
-    let nextDirection = DIRECTION_LIST[randomIndex];
-
-    if (index === 0) {
-      directions.push(nextDirection);
-    } else {
-      const previousDirection = directions[index - 1];
-
-      while (doesNegateDirection(previousDirection, nextDirection)) {
-        randomIndex = Math.floor(Math.random() * DIRECTION_LIST.length);
-        nextDirection = DIRECTION_LIST[randomIndex];
-      }
-
-      directions.push(nextDirection);
-    }
-  }
-
-  console.log(directions);
-
-  const pipe: THREE.Vector3[] = [start];
-
-  for (let index = 1; index < directions.length; index++) {
-    const previous = directions[index - 1].clone();
-    const current = directions[index].clone();
-
-    pipe.push(
-      new THREE.Vector3(
-        previous.x + current.x,
-        previous.y + current.y,
-        previous.z + current.z
-      )
-    );
-  }
-
-  return pipe;
+  box.position.copy(position);
+  scene.add(box);
 };
-
-const pipe = createPipe(new THREE.Vector3(0, 0, 0), 100);
 
 // Render Loop
 const clock = new THREE.Clock();
@@ -127,20 +89,8 @@ const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
   if (pipe.length) {
-    const segment = pipe.shift()!;
-
-    const box = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1, 1),
-      new THREE.MeshBasicMaterial({
-        color: "#84cc16",
-        transparent: true,
-        wireframe: true,
-        opacity: 0.1,
-      })
-    );
-
-    box.position.copy(segment);
-    scene.add(box);
+    const segment = pipe.pop()!;
+    drawPipeSegment(segment);
   }
   renderer.render(scene, camera);
   controls.update();
