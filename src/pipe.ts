@@ -33,13 +33,30 @@ export const createPipe = (start: THREE.Vector3, length: number) => {
     }
   }
 
-  const pipe: THREE.Vector3[] = [start];
+  const pipe = [
+    {
+      position: start,
+      isOverlapping: false,
+    },
+  ];
+
+  const existingPositions = new Set();
 
   for (let index = 1; index < directions.length; index++) {
-    const previousSegment = pipe[index - 1].clone();
+    const previousSegment = pipe[index - 1].position.clone();
     const nextDirection = directions[index].clone();
 
-    pipe.push(previousSegment.add(nextDirection));
+    const segmentPosition = previousSegment.add(nextDirection);
+
+    const positionKey = `${segmentPosition.x},${segmentPosition.y},${segmentPosition.z},`;
+    const isOverlapping = existingPositions.has(positionKey);
+
+    pipe.push({
+      position: segmentPosition,
+      isOverlapping: isOverlapping,
+    });
+
+    existingPositions.add(positionKey);
   }
 
   return pipe;

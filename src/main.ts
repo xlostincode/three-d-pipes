@@ -76,7 +76,7 @@ const axisHelper = new THREE.AxesHelper(1);
 scene.add(axisHelper);
 
 // Custom
-let pipe = createPipe(new THREE.Vector3(0, 0, 0), 100);
+let pipe = createPipe(new THREE.Vector3(0, 0, 0), 500);
 
 const pipeGeometry = new THREE.BoxGeometry(1, 1, 1);
 const pipeMaterial = new THREE.MeshBasicMaterial({
@@ -84,8 +84,16 @@ const pipeMaterial = new THREE.MeshBasicMaterial({
   transparent: true,
   opacity: 0.1,
 });
-const drawPipeSegment = (position: THREE.Vector3) => {
-  const box = new THREE.Mesh(pipeGeometry, pipeMaterial);
+const pipeMaterialOverlap = new THREE.MeshBasicMaterial({
+  color: "red",
+  transparent: true,
+  opacity: 0.1,
+});
+const drawPipeSegment = (position: THREE.Vector3, isOverlapping: boolean) => {
+  const box = new THREE.Mesh(
+    pipeGeometry,
+    isOverlapping ? pipeMaterialOverlap : pipeMaterial
+  );
 
   box.position.copy(position);
   scene.add(box);
@@ -99,7 +107,7 @@ const tick = () => {
 
   if (pipe.length) {
     const segment = pipe.pop()!;
-    drawPipeSegment(segment);
+    drawPipeSegment(segment.position, segment.isOverlapping);
   }
   renderer.render(scene, camera);
   controls.update();
