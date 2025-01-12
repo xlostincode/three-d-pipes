@@ -16,6 +16,15 @@ const canvasSize = {
   height: window.innerHeight,
 };
 
+// Parameters
+const parameters = {
+  scene: {
+    height: 100,
+    width: 100,
+    depth: 100,
+  },
+};
+
 // GUI
 const pane = new Pane();
 
@@ -99,32 +108,18 @@ const tick = () => {
 };
 tick();
 
-const drawDebugBox = () => {
-  const height = 5;
-  const width = 5;
-  const depth = 5;
+const drawBoundingBox = () => {
+  const height = parameters.scene.height;
+  const width = parameters.scene.width;
+  const depth = parameters.scene.depth;
 
-  const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+  const boxGeometry = new THREE.BoxGeometry(width, height, depth);
 
   const edgeGeometry = new THREE.EdgesGeometry(boxGeometry);
   const edgeMaterial = new THREE.LineBasicMaterial({
     color: "#84cc16",
-    transparent: true,
-    opacity: 0.1,
   });
 
-  for (let x = 0; x < depth; x++) {
-    for (let y = 0; y < height; y++) {
-      for (let z = 0; z < width; z++) {
-        const boxEdges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
-
-        const px = x - depth / 2 + 0.5;
-        const py = y - height / 2 + 0.5;
-        const pz = z - width / 2 + 0.5;
-
-        boxEdges.position.set(px, py, pz);
-        scene.add(boxEdges);
-      }
-    }
-  }
+  const boxEdges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+  scene.add(boxEdges);
 };

@@ -39,13 +39,7 @@ export const createPipe = (start: THREE.Vector3, length: number) => {
     const previousSegment = pipe[index - 1].clone();
     const nextDirection = directions[index].clone();
 
-    pipe.push(
-      new THREE.Vector3(
-        previousSegment.x + nextDirection.x,
-        previousSegment.y + nextDirection.y,
-        previousSegment.z + nextDirection.z
-      )
-    );
+    pipe.push(previousSegment.add(nextDirection));
   }
 
   return pipe;
