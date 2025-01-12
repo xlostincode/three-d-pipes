@@ -27,11 +27,29 @@ export const createPipe = (start: THREE.Vector3, length: number) => {
   const existingSegmentPositions = new Set();
 
   for (let index = 1; index < length; index++) {
-    const possibleDirections = [...DIRECTION_LIST];
-    let randomIndex = Math.floor(Math.random() * possibleDirections.length);
-
     const previousSegment = pipe[index - 1];
     const previousSegmentPosition = previousSegment.position.clone();
+
+    // Preserve the direction
+    if (Math.random() > 0.5 && previousSegment.direction) {
+      const nextDirection = previousSegment.direction.clone();
+      const segmentPosition = previousSegmentPosition
+        .clone()
+        .add(nextDirection);
+
+      const segment = {
+        position: segmentPosition,
+        direction: nextDirection,
+        isOverlapping: false,
+      };
+
+      pipe.push(segment);
+      existingSegmentPositions.add(createPositionKey(segmentPosition));
+      continue;
+    }
+
+    const possibleDirections = [...DIRECTION_LIST];
+    let randomIndex = Math.floor(Math.random() * possibleDirections.length);
 
     let nextDirection = possibleDirections.splice(randomIndex, 1)[0];
     let segmentPosition = previousSegmentPosition.add(nextDirection);
