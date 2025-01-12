@@ -2,7 +2,6 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import "./style.css";
 import * as THREE from "three";
 import { Pane } from "tweakpane";
-import { DIRECTION_LIST } from "./const";
 import { createPipe } from "./pipe";
 
 const canvasElement = document.getElementById("webgl");
@@ -76,7 +75,7 @@ const axisHelper = new THREE.AxesHelper(1);
 scene.add(axisHelper);
 
 // Custom
-let pipe = createPipe(new THREE.Vector3(0, 0, 0), 500);
+let pipe = createPipe(new THREE.Vector3(0, 0, 0), 100);
 
 const pipeGeometry = new THREE.BoxGeometry(1, 1, 1);
 const pipeMaterial = new THREE.MeshBasicMaterial({
@@ -131,3 +130,8 @@ const drawBoundingBox = () => {
   const boxEdges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
   scene.add(boxEdges);
 };
+
+// console.time("pipe");
+// const pipe = createPipe(new THREE.Vector3(0, 0, 0), 100000);
+// console.timeEnd("pipe");
+// console.log("Pipe length", pipe.length);

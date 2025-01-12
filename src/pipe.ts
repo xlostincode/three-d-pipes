@@ -1,62 +1,65 @@
 import * as THREE from "three";
 import { DIRECTION_LIST } from "./const";
 
+const createPositionKey = (position: THREE.Vector3) =>
+  `${position.x},${position.y},${position.z},`;
+
+const doesOverlap = (position: THREE.Vector3, positions: Set<any>) => {
+  const key = createPositionKey(position);
+  return positions.has(key);
+};
+
+type PipeSegment = {
+  position: THREE.Vector3;
+  direction: THREE.Vector3 | null;
+  isOverlapping: boolean;
+};
+
 export const createPipe = (start: THREE.Vector3, length: number) => {
-  const directions: THREE.Vector3[] = [];
-
-  const doesNegateDirection = (
-    vector1: THREE.Vector3,
-    vector2: THREE.Vector3
-  ) => {
-    return (
-      vector1.x + vector2.x === 0 &&
-      vector1.y + vector2.y === 0 &&
-      vector1.z + vector2.z === 0
-    );
-  };
-
-  for (let index = 0; index < length; index++) {
-    let randomIndex = Math.floor(Math.random() * DIRECTION_LIST.length);
-    let nextDirection = DIRECTION_LIST[randomIndex];
-
-    if (index === 0) {
-      directions.push(nextDirection);
-    } else {
-      const previousDirection = directions[index - 1];
-
-      while (doesNegateDirection(previousDirection, nextDirection)) {
-        randomIndex = Math.floor(Math.random() * DIRECTION_LIST.length);
-        nextDirection = DIRECTION_LIST[randomIndex];
-      }
-
-      directions.push(nextDirection);
-    }
-  }
-
-  const pipe = [
+  const pipe: PipeSegment[] = [
     {
       position: start,
+      direction: null,
       isOverlapping: false,
     },
   ];
 
-  const existingPositions = new Set();
+  const existingSegmentPositions = new Set();
 
-  for (let index = 1; index < directions.length; index++) {
-    const previousSegment = pipe[index - 1].position.clone();
-    const nextDirection = directions[index].clone();
+  for (let index = 1; index < length; index++) {
+    const possibleDirections = [...DIRECTION_LIST];
+    let randomIndex = Math.floor(Math.random() * possibleDirections.length);
 
-    const segmentPosition = previousSegment.add(nextDirection);
+    const previousSegment = pipe[index - 1];
+    const previousSegmentPosition = previousSegment.position.clone();
 
-    const positionKey = `${segmentPosition.x},${segmentPosition.y},${segmentPosition.z},`;
-    const isOverlapping = existingPositions.has(positionKey);
+    let nextDirection = possibleDirections.splice(randomIndex, 1)[0];
+    let segmentPosition = previousSegmentPosition.add(nextDirection);
 
-    pipe.push({
+    let _doesOverlap = doesOverlap(segmentPosition, existingSegmentPositions);
+
+    // Can this get stuck?
+    while (_doesOverlap && possibleDirections.length) {
+      randomIndex = Math.floor(Math.random() * possibleDirections.length);
+      nextDirection = possibleDirections.splice(randomIndex, 1)[0];
+      segmentPosition = previousSegmentPosition.clone().add(nextDirection);
+
+      _doesOverlap = doesOverlap(segmentPosition, existingSegmentPositions);
+    }
+
+    if (_doesOverlap && possibleDirections.length) {
+      console.error("Generation stuck. Exiting.");
+      break;
+    }
+
+    const segment: PipeSegment = {
       position: segmentPosition,
-      isOverlapping: isOverlapping,
-    });
+      direction: nextDirection,
+      isOverlapping: false,
+    };
 
-    existingPositions.add(positionKey);
+    existingSegmentPositions.add(createPositionKey(segment.position));
+    pipe.push(segment);
   }
 
   return pipe;
