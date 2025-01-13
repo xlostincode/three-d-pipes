@@ -52,7 +52,7 @@ export const createPipe = (start: THREE.Vector3, length: number) => {
     let randomIndex = Math.floor(Math.random() * possibleDirections.length);
 
     let nextDirection = possibleDirections.splice(randomIndex, 1)[0];
-    let segmentPosition = previousSegmentPosition.add(nextDirection);
+    let segmentPosition = previousSegmentPosition.clone().add(nextDirection);
 
     let _doesOverlap = doesOverlap(segmentPosition, existingSegmentPositions);
 
