@@ -17,10 +17,10 @@ const canvasSize = {
 
 // Parameters
 const parameters = {
-  scene: {
-    height: 100,
-    width: 100,
-    depth: 100,
+  bounds: {
+    x: 100,
+    y: 100,
+    z: 100,
   },
 };
 
@@ -75,7 +75,23 @@ const axisHelper = new THREE.AxesHelper(1);
 scene.add(axisHelper);
 
 // Custom
-let pipe = createPipe(new THREE.Vector3(0, 0, 0), 100);
+const calculateBoundingBox = () => {
+  const minX = parameters.bounds.x - parameters.bounds.x * 1.5;
+  const maxX = parameters.bounds.x - parameters.bounds.x * 0.5;
+
+  const minY = parameters.bounds.y - parameters.bounds.y * 1.5;
+  const maxY = parameters.bounds.y - parameters.bounds.y * 0.5;
+
+  const minZ = parameters.bounds.z - parameters.bounds.z * 1.5;
+  const maxZ = parameters.bounds.z - parameters.bounds.z * 0.5;
+
+  return new THREE.Box3(
+    new THREE.Vector3(minX, minY, minZ),
+    new THREE.Vector3(maxX, maxY, maxZ)
+  );
+};
+
+let pipe = createPipe(new THREE.Vector3(0, 0, 0), 1000, calculateBoundingBox());
 
 const pipeGeometry = new THREE.BoxGeometry(1, 1, 1);
 const pipeMaterial = new THREE.MeshBasicMaterial({
@@ -106,6 +122,7 @@ const tick = () => {
 
   if (pipe.length) {
     const segment = pipe.pop()!;
+    // console.log(segment);
     drawPipeSegment(segment.position, segment.isOverlapping);
   }
   renderer.render(scene, camera);
@@ -116,9 +133,9 @@ const tick = () => {
 tick();
 
 const drawBoundingBox = () => {
-  const height = parameters.scene.height;
-  const width = parameters.scene.width;
-  const depth = parameters.scene.depth;
+  const height = parameters.bounds.y;
+  const width = parameters.bounds.x;
+  const depth = parameters.bounds.z;
 
   const boxGeometry = new THREE.BoxGeometry(width, height, depth);
 
@@ -131,7 +148,12 @@ const drawBoundingBox = () => {
   scene.add(boxEdges);
 };
 
+// drawBoundingBox();
 // console.time("pipe");
 // const pipe = createPipe(new THREE.Vector3(0, 0, 0), 100000);
 // console.timeEnd("pipe");
 // console.log("Pipe length", pipe.length);
+
+// const bounds = calculateBoundingBox();
+// const box3Helper = new THREE.Box3Helper(bounds, "#84cc16");
+// scene.add(box3Helper);

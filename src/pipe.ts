@@ -1,6 +1,12 @@
 import * as THREE from "three";
 import { DIRECTION_LIST } from "./const";
 
+type PipeSegment = {
+  position: THREE.Vector3;
+  direction: THREE.Vector3 | null;
+  isOverlapping: boolean;
+};
+
 const createPositionKey = (position: THREE.Vector3) =>
   `${position.x},${position.y},${position.z},`;
 
@@ -9,13 +15,15 @@ const doesOverlap = (position: THREE.Vector3, positions: Set<any>) => {
   return positions.has(key);
 };
 
-type PipeSegment = {
-  position: THREE.Vector3;
-  direction: THREE.Vector3 | null;
-  isOverlapping: boolean;
+const doesExceedBounds = (position: THREE.Vector3, boundingBox: THREE.Box3) => {
+  return !boundingBox.containsPoint(position);
 };
 
-export const createPipe = (start: THREE.Vector3, length: number) => {
+export const createPipe = (
+  start: THREE.Vector3,
+  length: number,
+  boundingBox: THREE.Box3
+) => {
   const pipe: PipeSegment[] = [
     {
       position: start,
@@ -37,15 +45,20 @@ export const createPipe = (start: THREE.Vector3, length: number) => {
         .clone()
         .add(nextDirection);
 
-      const segment = {
-        position: segmentPosition,
-        direction: nextDirection,
-        isOverlapping: false,
-      };
+      let _doesOverlap = doesOverlap(segmentPosition, existingSegmentPositions);
+      let _doesExceedBounds = doesExceedBounds(segmentPosition, boundingBox);
 
-      pipe.push(segment);
-      existingSegmentPositions.add(createPositionKey(segmentPosition));
-      continue;
+      if (!_doesOverlap && !_doesExceedBounds) {
+        const segment = {
+          position: segmentPosition,
+          direction: nextDirection,
+          isOverlapping: false,
+        };
+
+        pipe.push(segment);
+        existingSegmentPositions.add(createPositionKey(segmentPosition));
+        continue;
+      }
     }
 
     const possibleDirections = [...DIRECTION_LIST];
@@ -55,17 +68,22 @@ export const createPipe = (start: THREE.Vector3, length: number) => {
     let segmentPosition = previousSegmentPosition.clone().add(nextDirection);
 
     let _doesOverlap = doesOverlap(segmentPosition, existingSegmentPositions);
+    let _doesExceedBounds = doesExceedBounds(segmentPosition, boundingBox);
 
-    // Can this get stuck?
-    while (_doesOverlap && possibleDirections.length) {
+    while ((_doesOverlap || _doesExceedBounds) && possibleDirections.length) {
       randomIndex = Math.floor(Math.random() * possibleDirections.length);
       nextDirection = possibleDirections.splice(randomIndex, 1)[0];
       segmentPosition = previousSegmentPosition.clone().add(nextDirection);
 
       _doesOverlap = doesOverlap(segmentPosition, existingSegmentPositions);
+      _doesExceedBounds = doesExceedBounds(segmentPosition, boundingBox);
     }
 
-    if (_doesOverlap && possibleDirections.length) {
+    // Dead end
+    if (
+      (_doesOverlap || _doesExceedBounds) &&
+      possibleDirections.length === 0
+    ) {
       console.error("Generation stuck. Exiting.");
       break;
     }
