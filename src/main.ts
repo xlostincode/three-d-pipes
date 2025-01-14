@@ -93,7 +93,7 @@ const calculateBoundingBox = () => {
 
 let pipe = createPipe(new THREE.Vector3(0, 0, 0), 1000, calculateBoundingBox());
 
-const pipeGeometry = new THREE.BoxGeometry(1, 1, 1);
+const pipeGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1);
 const pipeMaterial = new THREE.MeshBasicMaterial({
   color: "#84cc16",
   transparent: true,
@@ -105,13 +105,13 @@ const pipeMaterialOverlap = new THREE.MeshBasicMaterial({
   opacity: 0.1,
 });
 const drawPipeSegment = (position: THREE.Vector3, isOverlapping: boolean) => {
-  const box = new THREE.Mesh(
+  const pipeSegmentMesh = new THREE.Mesh(
     pipeGeometry,
     isOverlapping ? pipeMaterialOverlap : pipeMaterial
   );
 
-  box.position.copy(position);
-  scene.add(box);
+  pipeSegmentMesh.position.copy(position);
+  scene.add(pipeSegmentMesh);
 };
 
 // Render Loop
