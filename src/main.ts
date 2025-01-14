@@ -3,6 +3,7 @@ import "./style.css";
 import * as THREE from "three";
 import { Pane } from "tweakpane";
 import { createPipe } from "./pipe";
+import { DIRECTION_MAP } from "./const";
 
 const canvasElement = document.getElementById("webgl");
 
@@ -91,24 +92,42 @@ const calculateBoundingBox = () => {
   );
 };
 
-let pipe = createPipe(new THREE.Vector3(0, 0, 0), 1000, calculateBoundingBox());
+let pipe = createPipe(new THREE.Vector3(0, 0, 0), 100, calculateBoundingBox());
 
-const pipeGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1);
+const pipeGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1);
 const pipeMaterial = new THREE.MeshBasicMaterial({
   color: "#84cc16",
   transparent: true,
-  opacity: 0.1,
+  opacity: 0.5,
 });
-const pipeMaterialOverlap = new THREE.MeshBasicMaterial({
-  color: "red",
-  transparent: true,
-  opacity: 0.1,
-});
-const drawPipeSegment = (position: THREE.Vector3, isOverlapping: boolean) => {
-  const pipeSegmentMesh = new THREE.Mesh(
-    pipeGeometry,
-    isOverlapping ? pipeMaterialOverlap : pipeMaterial
-  );
+const drawPipeSegment = (
+  position: THREE.Vector3,
+  direction: THREE.Vector3 | null
+) => {
+  const pipeSegmentMesh = new THREE.Mesh(pipeGeometry, pipeMaterial);
+
+  if (direction) {
+    if (
+      direction.equals(DIRECTION_MAP.UP) ||
+      direction.equals(DIRECTION_MAP.DOWN)
+    ) {
+      pipeSegmentMesh.rotation.set(0, Math.PI * 0.5, 0);
+    }
+
+    if (
+      direction.equals(DIRECTION_MAP.LEFT) ||
+      direction.equals(DIRECTION_MAP.RIGHT)
+    ) {
+      pipeSegmentMesh.rotation.set(Math.PI * 0.5, 0, 0);
+    }
+
+    if (
+      direction.equals(DIRECTION_MAP.FORWARD) ||
+      direction.equals(DIRECTION_MAP.BACKWARD)
+    ) {
+      pipeSegmentMesh.rotation.set(0, 0, Math.PI * 0.5);
+    }
+  }
 
   pipeSegmentMesh.position.copy(position);
   scene.add(pipeSegmentMesh);
@@ -121,9 +140,8 @@ const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
   if (pipe.length) {
-    const segment = pipe.pop()!;
-    // console.log(segment);
-    drawPipeSegment(segment.position, segment.isOverlapping);
+    const segment = pipe.shift()!;
+    drawPipeSegment(segment.position, segment.direction);
   }
   renderer.render(scene, camera);
   controls.update();

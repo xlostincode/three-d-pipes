@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { DIRECTION_LIST } from "./const";
+import { DIRECTION_LIST, DIRECTION_MAP } from "./const";
 
 type PipeSegment = {
   position: THREE.Vector3;
@@ -98,5 +98,7 @@ export const createPipe = (
     pipe.push(segment);
   }
 
+  // Starting point has no direction so just copy the one from the next segment
+  pipe[0].direction = pipe[1].direction;
   return pipe;
 };
