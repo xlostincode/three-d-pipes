@@ -217,18 +217,22 @@ export class PipeRenderer {
         jointPipeOneMesh.rotation.copy(
           getRotationFromDirection(previousSegmentDirection)
         );
-
-        jointPipeOneMesh.position.multiply(
-          previousSegmentDirection
-            .clone()
-            .multiply(new THREE.Vector3(0.5, 0.5, 0.5))
-        );
-
         jointPipeTwoMesh.rotation.copy(
           getRotationFromDirection(nextSegmentDirection)
         );
 
-        this.scene.add(jointPipeOneMesh, jointPipeTwoMesh);
+        jointPipeOneMesh.position.add(
+          previousSegmentDirection
+            .clone()
+            .multiply(new THREE.Vector3(-0.25, -0.25, -0.25))
+        );
+        jointPipeTwoMesh.position.add(
+          nextSegmentDirection
+            .clone()
+            .multiply(new THREE.Vector3(0.25, 0.25, 0.25))
+        );
+
+        this.scene.add(jointBallMesh, jointPipeOneMesh, jointPipeTwoMesh);
       }
     } else {
       const pipeSegmentMesh = new THREE.Mesh(
