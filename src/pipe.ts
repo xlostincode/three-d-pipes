@@ -3,8 +3,12 @@ import { DIRECTION_LIST, DIRECTION_MAP } from "./const";
 
 type PipeSegment = {
   position: THREE.Vector3;
+  direction: THREE.Vector3;
+};
+
+type PipeSegmentWithNullableDirection = {
+  position: THREE.Vector3;
   direction: THREE.Vector3 | null;
-  isOverlapping: boolean;
 };
 
 const createPositionKey = (position: THREE.Vector3) =>
@@ -24,15 +28,15 @@ export const createPipe = (
   length: number,
   boundingBox: THREE.Box3
 ) => {
-  const pipe: PipeSegment[] = [
+  const pipe: PipeSegmentWithNullableDirection[] = [
     {
       position: start,
       direction: null,
-      isOverlapping: false,
     },
   ];
 
   const existingSegmentPositions = new Set();
+  existingSegmentPositions.add(createPositionKey(start));
 
   for (let index = 1; index < length; index++) {
     const previousSegment = pipe[index - 1];
@@ -91,16 +95,15 @@ export const createPipe = (
     const segment: PipeSegment = {
       position: segmentPosition,
       direction: nextDirection,
-      isOverlapping: false,
     };
 
     existingSegmentPositions.add(createPositionKey(segment.position));
     pipe.push(segment);
   }
 
-  // Starting point has no direction so just copy the one from the next segment
+  // Starting segment has no direction so just copy the one from the next segment
   pipe[0].direction = pipe[1].direction;
-  return pipe;
+  return pipe as PipeSegment[];
 };
 
 export class PipeRenderer {
