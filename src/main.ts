@@ -159,3 +159,9 @@ scene.add(box3Helper);
 // pjst.rotateZ(Math.PI * 0.5);
 // pjst.position.x = 0.25;
 // scene.add(pjb, pjso, pjst);
+
+const test = new THREE.Vector3(1, 1, 1);
+
+console.log(test);
+
+console.log(test.clone().multiply(new THREE.Vector3(0.5, 0.5, 0.5)));

@@ -217,6 +217,13 @@ export class PipeRenderer {
         jointPipeOneMesh.rotation.copy(
           getRotationFromDirection(previousSegmentDirection)
         );
+
+        jointPipeOneMesh.position.multiply(
+          previousSegmentDirection
+            .clone()
+            .multiply(new THREE.Vector3(0.5, 0.5, 0.5))
+        );
+
         jointPipeTwoMesh.rotation.copy(
           getRotationFromDirection(nextSegmentDirection)
         );
