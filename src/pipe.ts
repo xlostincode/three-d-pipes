@@ -11,6 +11,31 @@ type PipeSegmentWithNullableDirection = {
   direction: THREE.Vector3 | null;
 };
 
+const getRotationFromDirection = (direction: THREE.Vector3) => {
+  if (
+    direction.equals(DIRECTION_MAP.UP) ||
+    direction.equals(DIRECTION_MAP.DOWN)
+  ) {
+    return new THREE.Euler(0, Math.PI * 0.5, 0);
+  }
+
+  if (
+    direction.equals(DIRECTION_MAP.LEFT) ||
+    direction.equals(DIRECTION_MAP.RIGHT)
+  ) {
+    return new THREE.Euler(Math.PI * 0.5, 0, 0);
+  }
+
+  if (
+    direction.equals(DIRECTION_MAP.FORWARD) ||
+    direction.equals(DIRECTION_MAP.BACKWARD)
+  ) {
+    return new THREE.Euler(0, 0, Math.PI * 0.5);
+  }
+
+  return new THREE.Euler(0, 0, 0);
+};
+
 const createPositionKey = (position: THREE.Vector3) =>
   `${position.x},${position.y},${position.z},`;
 
@@ -110,23 +135,44 @@ export class PipeRenderer {
   private index: number;
   private pipe: PipeSegment[];
   private scene: THREE.Scene;
+
+  private pipeRadius: number;
   private pipeGeometry: THREE.CylinderGeometry;
   private pipeMaterial: THREE.MeshBasicMaterial;
+
+  private jointBallRadius: number;
   private jointBallGeometry: THREE.SphereGeometry;
+  private jointPipeGeometry: THREE.CylinderGeometry;
 
   constructor(pipe: PipeSegment[], scene: THREE.Scene) {
     this.index = 0;
     this.pipe = pipe;
     this.scene = scene;
 
-    this.pipeGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1);
+    this.pipeRadius = 0.2;
+    this.jointBallRadius = 0.3;
+
+    this.pipeGeometry = new THREE.CylinderGeometry(
+      this.pipeRadius,
+      this.pipeRadius,
+      1
+    );
     this.pipeMaterial = new THREE.MeshBasicMaterial({
       color: "#84cc16",
       transparent: true,
       opacity: 0.5,
     });
 
-    this.jointBallGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+    this.jointBallGeometry = new THREE.SphereGeometry(
+      this.jointBallRadius,
+      16,
+      16
+    );
+    this.jointPipeGeometry = new THREE.CylinderGeometry(
+      this.pipeRadius,
+      this.pipeRadius,
+      0.5
+    );
   }
 
   renderPipeSegment() {
@@ -153,8 +199,29 @@ export class PipeRenderer {
           this.pipeMaterial
         );
 
+        const jointPipeOneMesh = new THREE.Mesh(
+          this.jointPipeGeometry,
+          this.pipeMaterial
+        );
+
+        const jointPipeTwoMesh = new THREE.Mesh(
+          this.jointPipeGeometry,
+          this.pipeMaterial
+        );
+
         jointBallMesh.position.copy(segment.position);
-        this.scene.add(jointBallMesh);
+
+        jointPipeOneMesh.position.copy(segment.position);
+        jointPipeTwoMesh.position.copy(segment.position);
+
+        jointPipeOneMesh.rotation.copy(
+          getRotationFromDirection(previousSegmentDirection)
+        );
+        jointPipeTwoMesh.rotation.copy(
+          getRotationFromDirection(nextSegmentDirection)
+        );
+
+        this.scene.add(jointPipeOneMesh, jointPipeTwoMesh);
       }
     } else {
       const pipeSegmentMesh = new THREE.Mesh(
@@ -162,29 +229,8 @@ export class PipeRenderer {
         this.pipeMaterial
       );
 
-      // Apply rotation
-      if (
-        segmentDirection.equals(DIRECTION_MAP.UP) ||
-        segmentDirection.equals(DIRECTION_MAP.DOWN)
-      ) {
-        pipeSegmentMesh.rotation.set(0, Math.PI * 0.5, 0);
-      }
-
-      if (
-        segmentDirection.equals(DIRECTION_MAP.LEFT) ||
-        segmentDirection.equals(DIRECTION_MAP.RIGHT)
-      ) {
-        pipeSegmentMesh.rotation.set(Math.PI * 0.5, 0, 0);
-      }
-
-      if (
-        segmentDirection.equals(DIRECTION_MAP.FORWARD) ||
-        segmentDirection.equals(DIRECTION_MAP.BACKWARD)
-      ) {
-        pipeSegmentMesh.rotation.set(0, 0, Math.PI * 0.5);
-      }
-
-      // Joint
+      const rotation = getRotationFromDirection(segmentDirection);
+      pipeSegmentMesh.rotation.copy(rotation);
 
       pipeSegmentMesh.position.copy(segment.position);
 
