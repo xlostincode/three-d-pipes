@@ -91,7 +91,11 @@ const calculateBoundingBox = () => {
   );
 };
 
-const pipe = createPipe(new THREE.Vector3(0, 0, 0), 20, calculateBoundingBox());
+const pipe = createPipe(
+  new THREE.Vector3(0, 0, 0),
+  100,
+  calculateBoundingBox()
+);
 const pipeRenderer = new PipeRenderer(pipe, scene);
 
 // Render Loop

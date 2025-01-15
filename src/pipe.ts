@@ -222,7 +222,7 @@ export class PipeRenderer {
         );
 
         jointPipeOneMesh.position.add(
-          previousSegmentDirection
+          segmentDirection
             .clone()
             .multiply(new THREE.Vector3(-0.25, -0.25, -0.25))
         );
