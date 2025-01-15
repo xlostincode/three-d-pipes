@@ -145,13 +145,9 @@ export class PipeRenderer {
     if (
       previousSegmentDirection &&
       nextSegmentDirection &&
-      (!segment.direction.equals(previousSegmentDirection) ||
-        !segment.direction.equals(nextSegmentDirection))
+      !segment.direction.equals(nextSegmentDirection)
     ) {
-      if (
-        !segment.direction.equals(previousSegmentDirection) ||
-        !segment.direction.equals(nextSegmentDirection)
-      ) {
+      if (!segment.direction.equals(nextSegmentDirection)) {
         const jointBallMesh = new THREE.Mesh(
           this.jointBallGeometry,
           this.pipeMaterial
