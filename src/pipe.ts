@@ -112,6 +112,7 @@ export class PipeRenderer {
   private scene: THREE.Scene;
   private pipeGeometry: THREE.CylinderGeometry;
   private pipeMaterial: THREE.MeshBasicMaterial;
+  private jointBallGeometry: THREE.SphereGeometry;
 
   constructor(pipe: PipeSegment[], scene: THREE.Scene) {
     this.index = 0;
@@ -124,6 +125,8 @@ export class PipeRenderer {
       transparent: true,
       opacity: 0.5,
     });
+
+    this.jointBallGeometry = new THREE.SphereGeometry(0.3, 16, 16);
   }
 
   renderPipeSegment() {
@@ -131,15 +134,39 @@ export class PipeRenderer {
       return;
     }
 
+    const previousSegment = this.pipe.at(this.index - 1);
     const segment = this.pipe[this.index];
+    const nextSegment = this.pipe.at(this.index + 1);
+
+    const previousSegmentDirection = previousSegment?.direction;
     const segmentDirection = segment.direction;
+    const nextSegmentDirection = nextSegment?.direction;
 
-    const pipeSegmentMesh = new THREE.Mesh(
-      this.pipeGeometry,
-      this.pipeMaterial
-    );
+    if (
+      previousSegmentDirection &&
+      nextSegmentDirection &&
+      (!segment.direction.equals(previousSegmentDirection) ||
+        !segment.direction.equals(nextSegmentDirection))
+    ) {
+      if (
+        !segment.direction.equals(previousSegmentDirection) ||
+        !segment.direction.equals(nextSegmentDirection)
+      ) {
+        const jointBallMesh = new THREE.Mesh(
+          this.jointBallGeometry,
+          this.pipeMaterial
+        );
 
-    if (segmentDirection) {
+        jointBallMesh.position.copy(segment.position);
+        this.scene.add(jointBallMesh);
+      }
+    } else {
+      const pipeSegmentMesh = new THREE.Mesh(
+        this.pipeGeometry,
+        this.pipeMaterial
+      );
+
+      // Apply rotation
       if (
         segmentDirection.equals(DIRECTION_MAP.UP) ||
         segmentDirection.equals(DIRECTION_MAP.DOWN)
@@ -160,11 +187,14 @@ export class PipeRenderer {
       ) {
         pipeSegmentMesh.rotation.set(0, 0, Math.PI * 0.5);
       }
+
+      // Joint
+
+      pipeSegmentMesh.position.copy(segment.position);
+
+      this.scene.add(pipeSegmentMesh);
     }
 
-    pipeSegmentMesh.position.copy(segment.position);
-
-    this.scene.add(pipeSegmentMesh);
     this.index++;
   }
 }
