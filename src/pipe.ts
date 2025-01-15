@@ -180,16 +180,13 @@ export class PipeRenderer {
       return;
     }
 
-    const previousSegment = this.pipe.at(this.index - 1);
     const segment = this.pipe[this.index];
     const nextSegment = this.pipe.at(this.index + 1);
 
-    const previousSegmentDirection = previousSegment?.direction;
     const segmentDirection = segment.direction;
     const nextSegmentDirection = nextSegment?.direction;
 
     if (
-      previousSegmentDirection &&
       nextSegmentDirection &&
       !segment.direction.equals(nextSegmentDirection)
     ) {
@@ -215,7 +212,7 @@ export class PipeRenderer {
         jointPipeTwoMesh.position.copy(segment.position);
 
         jointPipeOneMesh.rotation.copy(
-          getRotationFromDirection(previousSegmentDirection)
+          getRotationFromDirection(segmentDirection)
         );
         jointPipeTwoMesh.rotation.copy(
           getRotationFromDirection(nextSegmentDirection)
