@@ -2,8 +2,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import "./style.css";
 import * as THREE from "three";
 import { Pane } from "tweakpane";
-import { createPipe } from "./pipe";
-import { DIRECTION_MAP } from "./const";
+import { createPipe, PipeRenderer } from "./pipe";
 
 const canvasElement = document.getElementById("webgl");
 
@@ -46,7 +45,7 @@ const camera = new THREE.PerspectiveCamera(
   75,
   canvasSize.width / canvasSize.height
 );
-camera.position.x = 20;
+camera.position.x = 2;
 scene.add(camera);
 
 // Controls
@@ -92,46 +91,12 @@ const calculateBoundingBox = () => {
   );
 };
 
-let pipe = createPipe(new THREE.Vector3(0, 0, 0), 100, calculateBoundingBox());
-
-const pipeGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1);
-const pipeMaterial = new THREE.MeshBasicMaterial({
-  color: "#84cc16",
-  transparent: true,
-  opacity: 0.5,
-});
-const drawPipeSegment = (
-  position: THREE.Vector3,
-  direction: THREE.Vector3 | null
-) => {
-  const pipeSegmentMesh = new THREE.Mesh(pipeGeometry, pipeMaterial);
-
-  if (direction) {
-    if (
-      direction.equals(DIRECTION_MAP.UP) ||
-      direction.equals(DIRECTION_MAP.DOWN)
-    ) {
-      pipeSegmentMesh.rotation.set(0, Math.PI * 0.5, 0);
-    }
-
-    if (
-      direction.equals(DIRECTION_MAP.LEFT) ||
-      direction.equals(DIRECTION_MAP.RIGHT)
-    ) {
-      pipeSegmentMesh.rotation.set(Math.PI * 0.5, 0, 0);
-    }
-
-    if (
-      direction.equals(DIRECTION_MAP.FORWARD) ||
-      direction.equals(DIRECTION_MAP.BACKWARD)
-    ) {
-      pipeSegmentMesh.rotation.set(0, 0, Math.PI * 0.5);
-    }
-  }
-
-  pipeSegmentMesh.position.copy(position);
-  scene.add(pipeSegmentMesh);
-};
+const pipe = createPipe(
+  new THREE.Vector3(0, 0, 0),
+  100,
+  calculateBoundingBox()
+);
+const pipeRenderer = new PipeRenderer(pipe, scene);
 
 // Render Loop
 const clock = new THREE.Clock();
@@ -139,10 +104,8 @@ const clock = new THREE.Clock();
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  if (pipe.length) {
-    const segment = pipe.shift()!;
-    drawPipeSegment(segment.position, segment.direction);
-  }
+  pipeRenderer.renderPipeSegment();
+
   renderer.render(scene, camera);
   controls.update();
 
@@ -175,3 +138,24 @@ const drawBoundingBox = () => {
 // const bounds = calculateBoundingBox();
 // const box3Helper = new THREE.Box3Helper(bounds, "#84cc16");
 // scene.add(box3Helper);
+
+const box = new THREE.Box3(
+  new THREE.Vector3(-0.5, -0.5, -0.5),
+  new THREE.Vector3(0.5, 0.5, 0.5)
+);
+const box3Helper = new THREE.Box3Helper(box, "#84cc16");
+scene.add(box3Helper);
+
+// const pipeJointBall = new THREE.SphereGeometry(0.3, 16, 16);
+// const pipeJointSegmentOne = new THREE.CylinderGeometry(0.2, 0.2, 0.5);
+// const pipeJointSegmentTwo = new THREE.CylinderGeometry(0.2, 0.2, 0.5);
+
+// const pjb = new THREE.Mesh(pipeJointBall, pipeMaterial);
+// const pjso = new THREE.Mesh(pipeJointSegmentOne, pipeMaterial);
+// pjso.rotateX(Math.PI * 0.5);
+// pjso.position.z = 0.25;
+
+// const pjst = new THREE.Mesh(pipeJointSegmentTwo, pipeMaterial);
+// pjst.rotateZ(Math.PI * 0.5);
+// pjst.position.x = 0.25;
+// scene.add(pjb, pjso, pjst);

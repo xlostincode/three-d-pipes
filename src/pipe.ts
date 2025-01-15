@@ -102,3 +102,66 @@ export const createPipe = (
   pipe[0].direction = pipe[1].direction;
   return pipe;
 };
+
+export class PipeRenderer {
+  private index: number;
+  private pipe: PipeSegment[];
+  private scene: THREE.Scene;
+  private pipeGeometry: THREE.CylinderGeometry;
+  private pipeMaterial: THREE.MeshBasicMaterial;
+
+  constructor(pipe: PipeSegment[], scene: THREE.Scene) {
+    this.index = 0;
+    this.pipe = pipe;
+    this.scene = scene;
+
+    this.pipeGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1);
+    this.pipeMaterial = new THREE.MeshBasicMaterial({
+      color: "#84cc16",
+      transparent: true,
+      opacity: 0.5,
+    });
+  }
+
+  renderPipeSegment() {
+    if (this.index >= this.pipe.length) {
+      return;
+    }
+
+    const segment = this.pipe[this.index];
+    const segmentDirection = segment.direction;
+
+    const pipeSegmentMesh = new THREE.Mesh(
+      this.pipeGeometry,
+      this.pipeMaterial
+    );
+
+    if (segmentDirection) {
+      if (
+        segmentDirection.equals(DIRECTION_MAP.UP) ||
+        segmentDirection.equals(DIRECTION_MAP.DOWN)
+      ) {
+        pipeSegmentMesh.rotation.set(0, Math.PI * 0.5, 0);
+      }
+
+      if (
+        segmentDirection.equals(DIRECTION_MAP.LEFT) ||
+        segmentDirection.equals(DIRECTION_MAP.RIGHT)
+      ) {
+        pipeSegmentMesh.rotation.set(Math.PI * 0.5, 0, 0);
+      }
+
+      if (
+        segmentDirection.equals(DIRECTION_MAP.FORWARD) ||
+        segmentDirection.equals(DIRECTION_MAP.BACKWARD)
+      ) {
+        pipeSegmentMesh.rotation.set(0, 0, Math.PI * 0.5);
+      }
+    }
+
+    pipeSegmentMesh.position.copy(segment.position);
+
+    this.scene.add(pipeSegmentMesh);
+    this.index++;
+  }
+}
