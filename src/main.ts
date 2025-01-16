@@ -71,8 +71,12 @@ window.addEventListener("resize", () => {
 });
 
 // Helpers
-const axisHelper = new THREE.AxesHelper(1);
-scene.add(axisHelper);
+// const axisHelper = new THREE.AxesHelper(1);
+// scene.add(axisHelper);
+
+// const bounds = calculateBoundingBox();
+// const box3Helper = new THREE.Box3Helper(bounds, "#84cc16");
+// scene.add(box3Helper);
 
 // Custom
 const calculateBoundingBox = () => {
@@ -126,34 +130,3 @@ const drawBoundingBox = () => {
   const boxEdges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
   scene.add(boxEdges);
 };
-
-// drawBoundingBox();
-// console.time("pipe");
-// const pipe = createPipe(new THREE.Vector3(0, 0, 0), 100000);
-// console.timeEnd("pipe");
-// console.log("Pipe length", pipe.length);
-
-// const bounds = calculateBoundingBox();
-// const box3Helper = new THREE.Box3Helper(bounds, "#84cc16");
-// scene.add(box3Helper);
-
-// const box = new THREE.Box3(
-//   new THREE.Vector3(-0.5, -0.5, -0.5),
-//   new THREE.Vector3(0.5, 0.5, 0.5)
-// );
-// const box3Helper = new THREE.Box3Helper(box, "#84cc16");
-// scene.add(box3Helper);
-
-// const pipeJointBall = new THREE.SphereGeometry(0.3, 16, 16);
-// const pipeJointSegmentOne = new THREE.CylinderGeometry(0.2, 0.2, 0.5);
-// const pipeJointSegmentTwo = new THREE.CylinderGeometry(0.2, 0.2, 0.5);
-
-// const pjb = new THREE.Mesh(pipeJointBall, pipeMaterial);
-// const pjso = new THREE.Mesh(pipeJointSegmentOne, pipeMaterial);
-// pjso.rotateX(Math.PI * 0.5);
-// pjso.position.z = 0.25;
-
-// const pjst = new THREE.Mesh(pipeJointSegmentTwo, pipeMaterial);
-// pjst.rotateZ(Math.PI * 0.5);
-// pjst.position.x = 0.25;
-// scene.add(pjb, pjso, pjst);

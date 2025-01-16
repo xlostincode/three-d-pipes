@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { DIRECTION_LIST, DIRECTION_MAP } from "./const";
-import { getRandomIntInRange } from "./utils";
+import { COLOR_LIST, DIRECTION_LIST, DIRECTION_MAP } from "./const";
+import { getRandomIntInRange, pickRandomFromArray } from "./utils";
 
 type PipeSegment = {
   position: THREE.Vector3;
@@ -204,9 +204,7 @@ export class PipeRenderer {
       1
     );
     this.pipeMaterial = new THREE.MeshBasicMaterial({
-      color: "#84cc16",
-      transparent: true,
-      opacity: 0.5,
+      color: pickRandomFromArray(COLOR_LIST),
     });
 
     this.jointBallGeometry = new THREE.SphereGeometry(
