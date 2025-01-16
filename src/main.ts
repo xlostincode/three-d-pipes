@@ -2,7 +2,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import "./style.css";
 import * as THREE from "three";
 import { Pane } from "tweakpane";
-import { createPipe, PipeRenderer } from "./pipe";
+import { createPipes, PipeRenderer } from "./pipe";
 
 const canvasElement = document.getElementById("webgl");
 
@@ -18,9 +18,9 @@ const canvasSize = {
 // Parameters
 const parameters = {
   bounds: {
-    x: 100,
-    y: 100,
-    z: 100,
+    x: 20,
+    y: 20,
+    z: 20,
   },
 };
 
@@ -91,12 +91,10 @@ const calculateBoundingBox = () => {
   );
 };
 
-const pipe = createPipe(
-  new THREE.Vector3(0, 0, 0),
-  100,
-  calculateBoundingBox()
-);
-const pipeRenderer = new PipeRenderer(pipe, scene);
+const boundingBox = calculateBoundingBox();
+
+const pipes = createPipes(10, 100, boundingBox);
+const pipeRenderers = pipes.map((pipe) => new PipeRenderer(pipe, scene));
 
 // Render Loop
 const clock = new THREE.Clock();
@@ -104,7 +102,7 @@ const clock = new THREE.Clock();
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  pipeRenderer.renderPipeSegment();
+  pipeRenderers.forEach((pipeRenderer) => pipeRenderer.renderPipeSegment());
 
   renderer.render(scene, camera);
   controls.update();
@@ -139,12 +137,12 @@ const drawBoundingBox = () => {
 // const box3Helper = new THREE.Box3Helper(bounds, "#84cc16");
 // scene.add(box3Helper);
 
-const box = new THREE.Box3(
-  new THREE.Vector3(-0.5, -0.5, -0.5),
-  new THREE.Vector3(0.5, 0.5, 0.5)
-);
-const box3Helper = new THREE.Box3Helper(box, "#84cc16");
-scene.add(box3Helper);
+// const box = new THREE.Box3(
+//   new THREE.Vector3(-0.5, -0.5, -0.5),
+//   new THREE.Vector3(0.5, 0.5, 0.5)
+// );
+// const box3Helper = new THREE.Box3Helper(box, "#84cc16");
+// scene.add(box3Helper);
 
 // const pipeJointBall = new THREE.SphereGeometry(0.3, 16, 16);
 // const pipeJointSegmentOne = new THREE.CylinderGeometry(0.2, 0.2, 0.5);
@@ -159,9 +157,3 @@ scene.add(box3Helper);
 // pjst.rotateZ(Math.PI * 0.5);
 // pjst.position.x = 0.25;
 // scene.add(pjb, pjso, pjst);
-
-const test = new THREE.Vector3(1, 1, 1);
-
-console.log(test);
-
-console.log(test.clone().multiply(new THREE.Vector3(0.5, 0.5, 0.5)));

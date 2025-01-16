@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { DIRECTION_LIST, DIRECTION_MAP } from "./const";
+import { getRandomIntInRange } from "./utils";
 
 type PipeSegment = {
   position: THREE.Vector3;
@@ -51,7 +52,8 @@ const doesExceedBounds = (position: THREE.Vector3, boundingBox: THREE.Box3) => {
 export const createPipe = (
   start: THREE.Vector3,
   length: number,
-  boundingBox: THREE.Box3
+  boundingBox: THREE.Box3,
+  initialExistingPositions?: Set<string>
 ) => {
   const pipe: PipeSegmentWithNullableDirection[] = [
     {
@@ -62,6 +64,12 @@ export const createPipe = (
 
   const existingSegmentPositions = new Set();
   existingSegmentPositions.add(createPositionKey(start));
+
+  if (initialExistingPositions) {
+    initialExistingPositions.forEach((position) =>
+      existingSegmentPositions.add(position)
+    );
+  }
 
   for (let index = 1; index < length; index++) {
     const previousSegment = pipe[index - 1];
@@ -129,6 +137,44 @@ export const createPipe = (
   // Starting segment has no direction so just copy the one from the next segment
   pipe[0].direction = pipe[1].direction;
   return pipe as PipeSegment[];
+};
+
+export const createPipes = (
+  count: number,
+  length: number,
+  boundingBox: THREE.Box3
+) => {
+  const existingSegmentPositions = new Set<string>();
+
+  const pipes: PipeSegment[][] = [];
+
+  let index = 0;
+  while (index < count) {
+    const x = getRandomIntInRange(boundingBox.min.x, boundingBox.max.x);
+    const y = getRandomIntInRange(boundingBox.min.y, boundingBox.max.y);
+    const z = getRandomIntInRange(boundingBox.min.z, boundingBox.max.z);
+
+    const startingPosition = new THREE.Vector3(x, y, z);
+
+    if (!existingSegmentPositions.has(createPositionKey(startingPosition))) {
+      const pipe = createPipe(
+        startingPosition,
+        length,
+        boundingBox,
+        existingSegmentPositions
+      );
+
+      pipe.forEach((segment) =>
+        existingSegmentPositions.add(createPositionKey(segment.position))
+      );
+
+      pipes.push(pipe);
+
+      index++;
+    }
+  }
+
+  return pipes;
 };
 
 export class PipeRenderer {
