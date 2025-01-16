@@ -184,7 +184,7 @@ export class PipeRenderer {
 
   private pipeRadius: number;
   private pipeGeometry: THREE.CylinderGeometry;
-  private pipeMaterial: THREE.MeshBasicMaterial;
+  private pipeMaterial: THREE.MeshPhongMaterial;
 
   private jointBallRadius: number;
   private jointBallGeometry: THREE.SphereGeometry;
@@ -203,7 +203,7 @@ export class PipeRenderer {
       this.pipeRadius,
       1
     );
-    this.pipeMaterial = new THREE.MeshBasicMaterial({
+    this.pipeMaterial = new THREE.MeshPhongMaterial({
       color: pickRandomFromArray(COLOR_LIST),
     });
 

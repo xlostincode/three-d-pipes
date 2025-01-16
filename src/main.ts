@@ -48,6 +48,16 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.x = 2;
 scene.add(camera);
 
+// Lights
+const directionalLight1 = new THREE.DirectionalLight("#ffffff", 1);
+const directionalLight2 = new THREE.DirectionalLight("#ffffff", 1);
+const directionalLight3 = new THREE.DirectionalLight("#ffffff", 1);
+
+directionalLight1.position.set(0, 0, 1);
+directionalLight2.position.set(1, 0, 0);
+directionalLight3.position.set(0, 0, -1);
+
+scene.add(directionalLight1, directionalLight2, directionalLight3);
 // Controls
 const controls = new OrbitControls(camera, canvasElement);
 controls.enableDamping = true;
@@ -70,14 +80,6 @@ window.addEventListener("resize", () => {
   renderer.setSize(canvasSize.width, canvasSize.height);
 });
 
-// Helpers
-// const axisHelper = new THREE.AxesHelper(1);
-// scene.add(axisHelper);
-
-// const bounds = calculateBoundingBox();
-// const box3Helper = new THREE.Box3Helper(bounds, "#84cc16");
-// scene.add(box3Helper);
-
 // Custom
 const calculateBoundingBox = () => {
   const minX = parameters.bounds.x - parameters.bounds.x * 1.5;
@@ -99,6 +101,14 @@ const boundingBox = calculateBoundingBox();
 
 const pipes = createPipes(10, 100, boundingBox);
 const pipeRenderers = pipes.map((pipe) => new PipeRenderer(pipe, scene));
+
+// Helpers
+// const axisHelper = new THREE.AxesHelper(1);
+// scene.add(axisHelper);
+
+// const bounds = calculateBoundingBox();
+// const box3Helper = new THREE.Box3Helper(bounds, "#84cc16");
+// scene.add(box3Helper);
 
 // Render Loop
 const clock = new THREE.Clock();
