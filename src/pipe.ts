@@ -178,21 +178,24 @@ export const createPipes = (
 };
 
 export class PipeRenderer {
-  private index: number;
-  private pipe: PipeSegment[];
+  private currentSegmentIndex: number;
+  private pipes: PipeSegment[][];
   private scene: THREE.Scene;
 
   private pipeRadius: number;
   private pipeGeometry: THREE.CylinderGeometry;
-  private pipeMaterial: THREE.MeshPhongMaterial;
+  private pipeMaterials: THREE.MeshPhongMaterial[];
 
   private jointBallRadius: number;
   private jointBallGeometry: THREE.SphereGeometry;
   private jointPipeGeometry: THREE.CylinderGeometry;
 
-  constructor(pipe: PipeSegment[], scene: THREE.Scene) {
-    this.index = 0;
-    this.pipe = pipe;
+  private _meshes: THREE.Mesh[];
+  private _longestPipeLength: number;
+
+  constructor(pipes: PipeSegment[][], scene: THREE.Scene) {
+    this.currentSegmentIndex = 0;
+    this.pipes = pipes;
     this.scene = scene;
 
     this.pipeRadius = 0.2;
@@ -203,9 +206,12 @@ export class PipeRenderer {
       this.pipeRadius,
       1
     );
-    this.pipeMaterial = new THREE.MeshPhongMaterial({
-      color: pickRandomFromArray(COLOR_LIST),
-    });
+    this.pipeMaterials = pipes.map(
+      (_) =>
+        new THREE.MeshPhongMaterial({
+          color: pickRandomFromArray(COLOR_LIST),
+        })
+    );
 
     this.jointBallGeometry = new THREE.SphereGeometry(
       this.jointBallRadius,
@@ -217,78 +223,101 @@ export class PipeRenderer {
       this.pipeRadius,
       0.5
     );
+
+    this._meshes = [];
+    this._longestPipeLength = Math.max(...pipes.map((pipe) => pipe.length));
   }
 
-  renderPipeSegment() {
-    if (this.index >= this.pipe.length) {
+  renderNextSegments() {
+    if (this.currentSegmentIndex >= this._longestPipeLength) {
       return;
     }
 
-    const segment = this.pipe[this.index];
-    const nextSegment = this.pipe.at(this.index + 1);
+    for (let pipeIndex = 0; pipeIndex < this.pipes.length; pipeIndex++) {
+      const segment = this.pipes[pipeIndex].at(this.currentSegmentIndex);
 
-    const segmentDirection = segment.direction;
-    const nextSegmentDirection = nextSegment?.direction;
-
-    if (
-      nextSegmentDirection &&
-      !segment.direction.equals(nextSegmentDirection)
-    ) {
-      if (!segment.direction.equals(nextSegmentDirection)) {
-        const jointBallMesh = new THREE.Mesh(
-          this.jointBallGeometry,
-          this.pipeMaterial
-        );
-
-        const jointPipeOneMesh = new THREE.Mesh(
-          this.jointPipeGeometry,
-          this.pipeMaterial
-        );
-
-        const jointPipeTwoMesh = new THREE.Mesh(
-          this.jointPipeGeometry,
-          this.pipeMaterial
-        );
-
-        jointBallMesh.position.copy(segment.position);
-
-        jointPipeOneMesh.position.copy(segment.position);
-        jointPipeTwoMesh.position.copy(segment.position);
-
-        jointPipeOneMesh.rotation.copy(
-          getRotationFromDirection(segmentDirection)
-        );
-        jointPipeTwoMesh.rotation.copy(
-          getRotationFromDirection(nextSegmentDirection)
-        );
-
-        jointPipeOneMesh.position.add(
-          segmentDirection
-            .clone()
-            .multiply(new THREE.Vector3(-0.25, -0.25, -0.25))
-        );
-        jointPipeTwoMesh.position.add(
-          nextSegmentDirection
-            .clone()
-            .multiply(new THREE.Vector3(0.25, 0.25, 0.25))
-        );
-
-        this.scene.add(jointBallMesh, jointPipeOneMesh, jointPipeTwoMesh);
+      if (!segment) {
+        continue;
       }
-    } else {
-      const pipeSegmentMesh = new THREE.Mesh(
-        this.pipeGeometry,
-        this.pipeMaterial
+
+      const nextSegment = this.pipes[pipeIndex].at(
+        this.currentSegmentIndex + 1
       );
 
-      const rotation = getRotationFromDirection(segmentDirection);
-      pipeSegmentMesh.rotation.copy(rotation);
+      const segmentDirection = segment.direction;
+      const nextSegmentDirection = nextSegment?.direction;
 
-      pipeSegmentMesh.position.copy(segment.position);
+      if (
+        nextSegmentDirection &&
+        !segment.direction.equals(nextSegmentDirection)
+      ) {
+        if (!segment.direction.equals(nextSegmentDirection)) {
+          const jointBallMesh = new THREE.Mesh(
+            this.jointBallGeometry,
+            this.pipeMaterials[pipeIndex]
+          );
 
-      this.scene.add(pipeSegmentMesh);
+          const jointPipeOneMesh = new THREE.Mesh(
+            this.jointPipeGeometry,
+            this.pipeMaterials[pipeIndex]
+          );
+
+          const jointPipeTwoMesh = new THREE.Mesh(
+            this.jointPipeGeometry,
+            this.pipeMaterials[pipeIndex]
+          );
+
+          jointBallMesh.position.copy(segment.position);
+
+          jointPipeOneMesh.position.copy(segment.position);
+          jointPipeTwoMesh.position.copy(segment.position);
+
+          jointPipeOneMesh.rotation.copy(
+            getRotationFromDirection(segmentDirection)
+          );
+          jointPipeTwoMesh.rotation.copy(
+            getRotationFromDirection(nextSegmentDirection)
+          );
+
+          jointPipeOneMesh.position.add(
+            segmentDirection
+              .clone()
+              .multiply(new THREE.Vector3(-0.25, -0.25, -0.25))
+          );
+          jointPipeTwoMesh.position.add(
+            nextSegmentDirection
+              .clone()
+              .multiply(new THREE.Vector3(0.25, 0.25, 0.25))
+          );
+
+          this.scene.add(jointBallMesh, jointPipeOneMesh, jointPipeTwoMesh);
+          this._meshes.push(jointBallMesh, jointPipeOneMesh, jointPipeTwoMesh);
+        }
+      } else {
+        const pipeSegmentMesh = new THREE.Mesh(
+          this.pipeGeometry,
+          this.pipeMaterials[pipeIndex]
+        );
+
+        const rotation = getRotationFromDirection(segmentDirection);
+        pipeSegmentMesh.rotation.copy(rotation);
+
+        pipeSegmentMesh.position.copy(segment.position);
+
+        this.scene.add(pipeSegmentMesh);
+        this._meshes.push(pipeSegmentMesh);
+      }
     }
 
-    this.index++;
+    this.currentSegmentIndex++;
+  }
+
+  dispose() {
+    this._meshes.forEach((mesh) => {
+      this.scene.remove(mesh);
+      // @ts-expect-error - Material will not be an array so its safe to call dispose directly
+      mesh.material.dispose();
+      mesh.geometry.dispose();
+    });
   }
 }

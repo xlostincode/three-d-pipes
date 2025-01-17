@@ -29,16 +29,6 @@ const pane = new Pane();
 
 // Scene
 const scene = new THREE.Scene();
-// const debugBox = new THREE.Mesh(
-//   new THREE.BoxGeometry(1, 1, 1),
-//   new THREE.MeshBasicMaterial({
-//     color: "#84cc16",
-//     transparent: true,
-//     wireframe: true,
-//     opacity: 0.1,
-//   })
-// );
-// scene.add(debugBox);
 
 // Camera
 const camera = new THREE.PerspectiveCamera(
@@ -100,8 +90,7 @@ const calculateBoundingBox = () => {
 const boundingBox = calculateBoundingBox();
 
 const pipes = createPipes(10, 100, boundingBox);
-const pipeRenderers = pipes.map((pipe) => new PipeRenderer(pipe, scene));
-
+const pipeRenderer = new PipeRenderer(pipes, scene);
 // Helpers
 // const axisHelper = new THREE.AxesHelper(1);
 // scene.add(axisHelper);
@@ -116,7 +105,7 @@ const clock = new THREE.Clock();
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  pipeRenderers.forEach((pipeRenderer) => pipeRenderer.renderPipeSegment());
+  pipeRenderer.renderNextSegments();
 
   renderer.render(scene, camera);
   controls.update();
@@ -124,19 +113,3 @@ const tick = () => {
   window.requestAnimationFrame(tick);
 };
 tick();
-
-const drawBoundingBox = () => {
-  const height = parameters.bounds.y;
-  const width = parameters.bounds.x;
-  const depth = parameters.bounds.z;
-
-  const boxGeometry = new THREE.BoxGeometry(width, height, depth);
-
-  const edgeGeometry = new THREE.EdgesGeometry(boxGeometry);
-  const edgeMaterial = new THREE.LineBasicMaterial({
-    color: "#84cc16",
-  });
-
-  const boxEdges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
-  scene.add(boxEdges);
-};
