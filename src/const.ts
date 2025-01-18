@@ -1,5 +1,7 @@
 import * as THREE from "three";
 
+const searchParams = new URLSearchParams(window.location.search);
+
 export const DEFAULT_PARAMS = {
   bounds: {
     x: 25,
@@ -9,6 +11,8 @@ export const DEFAULT_PARAMS = {
   pipeCount: 10,
   pipeLength: 200,
   pipeTurnRandomness: 0.25,
+  seed: searchParams.get("seed") || "lost-in-code",
+  randomizeSeed: true,
 };
 
 export const DIRECTION_MAP = {

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { COLOR_LIST, DIRECTION_LIST, DIRECTION_MAP } from "./const";
 import { getRandomIntInRange, pickRandomFromArray } from "./utils";
+import { SeededRandomNumberGenerator } from "./rng";
 
 type PipeSegment = {
   position: THREE.Vector3;
@@ -54,6 +55,7 @@ export const createPipe = (
   length: number,
   boundingBox: THREE.Box3,
   turnRandomness: number = 0.5,
+  rng: SeededRandomNumberGenerator,
   initialExistingPositions?: Set<string>
 ) => {
   const pipe: PipeSegmentWithNullableDirection[] = [
@@ -77,7 +79,7 @@ export const createPipe = (
     const previousSegmentPosition = previousSegment.position.clone();
 
     // Preserve the direction
-    if (Math.random() > turnRandomness && previousSegment.direction) {
+    if (rng.next() > turnRandomness && previousSegment.direction) {
       const nextDirection = previousSegment.direction.clone();
       const segmentPosition = previousSegmentPosition
         .clone()
@@ -100,7 +102,7 @@ export const createPipe = (
     }
 
     const possibleDirections = [...DIRECTION_LIST];
-    let randomIndex = Math.floor(Math.random() * possibleDirections.length);
+    let randomIndex = Math.floor(rng.next() * possibleDirections.length);
 
     let nextDirection = possibleDirections.splice(randomIndex, 1)[0];
     let segmentPosition = previousSegmentPosition.clone().add(nextDirection);
@@ -109,7 +111,7 @@ export const createPipe = (
     let _doesExceedBounds = doesExceedBounds(segmentPosition, boundingBox);
 
     while ((_doesOverlap || _doesExceedBounds) && possibleDirections.length) {
-      randomIndex = Math.floor(Math.random() * possibleDirections.length);
+      randomIndex = Math.floor(rng.next() * possibleDirections.length);
       nextDirection = possibleDirections.splice(randomIndex, 1)[0];
       segmentPosition = previousSegmentPosition.clone().add(nextDirection);
 
@@ -144,17 +146,19 @@ export const createPipes = (
   count: number,
   length: number,
   boundingBox: THREE.Box3,
-  turnRandomness: number = 0.5
+  turnRandomness: number = 0.5,
+  rng: SeededRandomNumberGenerator
 ) => {
+  console.log(count, length);
   const existingSegmentPositions = new Set<string>();
 
   const pipes: PipeSegment[][] = [];
 
   let index = 0;
   while (index < count) {
-    const x = getRandomIntInRange(boundingBox.min.x, boundingBox.max.x);
-    const y = getRandomIntInRange(boundingBox.min.y, boundingBox.max.y);
-    const z = getRandomIntInRange(boundingBox.min.z, boundingBox.max.z);
+    const x = getRandomIntInRange(boundingBox.min.x, boundingBox.max.x, rng);
+    const y = getRandomIntInRange(boundingBox.min.y, boundingBox.max.y, rng);
+    const z = getRandomIntInRange(boundingBox.min.z, boundingBox.max.z, rng);
 
     const startingPosition = new THREE.Vector3(x, y, z);
 
@@ -164,6 +168,7 @@ export const createPipes = (
         length,
         boundingBox,
         turnRandomness,
+        rng,
         existingSegmentPositions
       );
 
@@ -196,7 +201,11 @@ export class PipeRenderer {
   private _meshes: THREE.Mesh[];
   private _longestPipeLength: number;
 
-  constructor(pipes: PipeSegment[][], scene: THREE.Scene) {
+  constructor(
+    pipes: PipeSegment[][],
+    scene: THREE.Scene,
+    rng: SeededRandomNumberGenerator
+  ) {
     this.currentSegmentIndex = 0;
     this.pipes = pipes;
     this.scene = scene;
@@ -212,7 +221,7 @@ export class PipeRenderer {
     this.pipeMaterials = pipes.map(
       (_) =>
         new THREE.MeshPhongMaterial({
-          color: pickRandomFromArray(COLOR_LIST),
+          color: pickRandomFromArray(COLOR_LIST, rng),
         })
     );
 

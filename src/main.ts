@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { Pane } from "tweakpane";
 import { createPipes, PipeRenderer } from "./pipe";
 import { DEFAULT_PARAMS } from "./const";
+import { SeededRandomNumberGenerator } from "./rng";
 
 const canvasElement = document.getElementById("webgl");
 
@@ -76,6 +77,7 @@ const calculateBoundingBox = (x: number, y: number, z: number) => {
   );
 };
 
+const rng = new SeededRandomNumberGenerator(DEFAULT_PARAMS.seed);
 const parameters = {
   bounds: {
     x: DEFAULT_PARAMS.bounds.x,
@@ -87,20 +89,29 @@ const parameters = {
   pipeTurnRandomness: DEFAULT_PARAMS.pipeTurnRandomness,
   pipeRenderer: new PipeRenderer(
     createPipes(
-      10,
-      100,
+      DEFAULT_PARAMS.pipeCount,
+      DEFAULT_PARAMS.pipeLength,
       calculateBoundingBox(
         DEFAULT_PARAMS.bounds.x,
         DEFAULT_PARAMS.bounds.y,
         DEFAULT_PARAMS.bounds.z
-      )
+      ),
+      DEFAULT_PARAMS.pipeTurnRandomness,
+      rng
     ),
-    scene
+    scene,
+    rng
   ),
+  seed: DEFAULT_PARAMS.seed,
+  randomizeSeed: DEFAULT_PARAMS.randomizeSeed,
 };
 
 // GUI
 const pane = new Pane();
+
+pane.addBinding(parameters, "seed", {
+  label: "Seed",
+});
 
 pane.addBinding(parameters, "bounds", {
   label: "Bounds (x,y,z)",
@@ -135,14 +146,32 @@ pane.addBlade({
   view: "separator",
 });
 
+pane.addBinding(parameters, "randomizeSeed", {
+  label: "Random seed",
+});
+
 const playButton = pane.addButton({
   title: "Play",
+});
+
+const copyButton = pane.addButton({
+  title: "Copy link",
 });
 
 playButton.on("click", () => {
   camera.position.set(Math.round(DEFAULT_PARAMS.bounds.x * 0.5), 0, 0);
 
   parameters.pipeRenderer.dispose();
+
+  if (parameters.randomizeSeed) {
+    const newSeed = Math.random().toString().replace(".", "");
+    rng.setSeed(newSeed);
+
+    parameters.seed = newSeed;
+    pane.refresh();
+  } else {
+    rng.setSeed(parameters.seed);
+  }
 
   parameters.pipeRenderer = new PipeRenderer(
     createPipes(
@@ -153,18 +182,22 @@ playButton.on("click", () => {
         parameters.bounds.y,
         parameters.bounds.z
       ),
-      parameters.pipeTurnRandomness
+      parameters.pipeTurnRandomness,
+      rng
     ),
-    scene
+    scene,
+    rng
+  );
+});
+
+copyButton.on("click", () => {
+  window.navigator.clipboard.writeText(
+    window.location.href + "?seed=" + parameters.seed
   );
 });
 
 // Render Loop
-const clock = new THREE.Clock();
-
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
-
   parameters.pipeRenderer.renderNextSegments();
 
   renderer.render(scene, camera);
