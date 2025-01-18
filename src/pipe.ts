@@ -53,6 +53,7 @@ export const createPipe = (
   start: THREE.Vector3,
   length: number,
   boundingBox: THREE.Box3,
+  turnRandomness: number = 0.5,
   initialExistingPositions?: Set<string>
 ) => {
   const pipe: PipeSegmentWithNullableDirection[] = [
@@ -76,7 +77,7 @@ export const createPipe = (
     const previousSegmentPosition = previousSegment.position.clone();
 
     // Preserve the direction
-    if (Math.random() > 0.5 && previousSegment.direction) {
+    if (Math.random() > turnRandomness && previousSegment.direction) {
       const nextDirection = previousSegment.direction.clone();
       const segmentPosition = previousSegmentPosition
         .clone()
@@ -142,7 +143,8 @@ export const createPipe = (
 export const createPipes = (
   count: number,
   length: number,
-  boundingBox: THREE.Box3
+  boundingBox: THREE.Box3,
+  turnRandomness: number = 0.5
 ) => {
   const existingSegmentPositions = new Set<string>();
 
@@ -161,6 +163,7 @@ export const createPipes = (
         startingPosition,
         length,
         boundingBox,
+        turnRandomness,
         existingSegmentPositions
       );
 
@@ -315,6 +318,8 @@ export class PipeRenderer {
   dispose() {
     this._meshes.forEach((mesh) => {
       this.scene.remove(mesh);
+    });
+    this._meshes.forEach((mesh) => {
       // @ts-expect-error - Material will not be an array so its safe to call dispose directly
       mesh.material.dispose();
       mesh.geometry.dispose();

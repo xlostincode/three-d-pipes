@@ -15,17 +15,16 @@ const canvasSize = {
   height: window.innerHeight,
 };
 
-// Parameters
-const parameters = {
+const DEFAULTS = {
   bounds: {
-    x: 20,
-    y: 20,
-    z: 20,
+    x: 25,
+    y: 25,
+    z: 25,
   },
+  pipeCount: 10,
+  pipeLength: 200,
+  pipeTurnRandomness: 0.25,
 };
-
-// GUI
-const pane = new Pane();
 
 // Scene
 const scene = new THREE.Scene();
@@ -35,7 +34,7 @@ const camera = new THREE.PerspectiveCamera(
   75,
   canvasSize.width / canvasSize.height
 );
-camera.position.x = 2;
+camera.position.x = Math.round(DEFAULTS.bounds.x * 0.5);
 scene.add(camera);
 
 // Lights
@@ -70,16 +69,16 @@ window.addEventListener("resize", () => {
   renderer.setSize(canvasSize.width, canvasSize.height);
 });
 
-// Custom
-const calculateBoundingBox = () => {
-  const minX = parameters.bounds.x - parameters.bounds.x * 1.5;
-  const maxX = parameters.bounds.x - parameters.bounds.x * 0.5;
+// Parameters
+const calculateBoundingBox = (x: number, y: number, z: number) => {
+  const minX = x - x * 1.5;
+  const maxX = x - x * 0.5;
 
-  const minY = parameters.bounds.y - parameters.bounds.y * 1.5;
-  const maxY = parameters.bounds.y - parameters.bounds.y * 0.5;
+  const minY = y - y * 1.5;
+  const maxY = y - y * 0.5;
 
-  const minZ = parameters.bounds.z - parameters.bounds.z * 1.5;
-  const maxZ = parameters.bounds.z - parameters.bounds.z * 0.5;
+  const minZ = z - z * 1.5;
+  const maxZ = z - z * 0.5;
 
   return new THREE.Box3(
     new THREE.Vector3(minX, minY, minZ),
@@ -87,17 +86,88 @@ const calculateBoundingBox = () => {
   );
 };
 
-const boundingBox = calculateBoundingBox();
+const parameters = {
+  bounds: {
+    x: DEFAULTS.bounds.x,
+    y: DEFAULTS.bounds.y,
+    z: DEFAULTS.bounds.z,
+  },
+  pipeCount: DEFAULTS.pipeCount,
+  pipeLength: DEFAULTS.pipeLength,
+  pipeTurnRandomness: DEFAULTS.pipeTurnRandomness,
+  pipeRenderer: new PipeRenderer(
+    createPipes(
+      10,
+      100,
+      calculateBoundingBox(
+        DEFAULTS.bounds.x,
+        DEFAULTS.bounds.y,
+        DEFAULTS.bounds.z
+      )
+    ),
+    scene
+  ),
+};
 
-const pipes = createPipes(10, 100, boundingBox);
-const pipeRenderer = new PipeRenderer(pipes, scene);
-// Helpers
-// const axisHelper = new THREE.AxesHelper(1);
-// scene.add(axisHelper);
+// GUI
+const pane = new Pane();
 
-// const bounds = calculateBoundingBox();
-// const box3Helper = new THREE.Box3Helper(bounds, "#84cc16");
-// scene.add(box3Helper);
+pane.addBinding(parameters, "bounds", {
+  label: "Bounds (x,y,z)",
+  min: 5,
+  max: 100,
+  step: 1,
+});
+
+pane.addBinding(parameters, "pipeCount", {
+  label: "Number of pipes",
+  min: 1,
+  max: 50,
+  step: 1,
+});
+
+pane.addBinding(parameters, "pipeLength", {
+  label: "Length of pipes",
+  min: 2,
+  max: 1000,
+  step: 1,
+});
+
+pane.addBinding(parameters, "pipeTurnRandomness", {
+  label: "Pipe turn randomness",
+  tag: "Tests",
+  min: 0,
+  max: 1,
+  step: 0.05,
+});
+
+pane.addBlade({
+  view: "separator",
+});
+
+const playButton = pane.addButton({
+  title: "Play",
+});
+
+playButton.on("click", () => {
+  camera.position.set(Math.round(DEFAULTS.bounds.x * 0.5), 0, 0);
+
+  parameters.pipeRenderer.dispose();
+
+  parameters.pipeRenderer = new PipeRenderer(
+    createPipes(
+      parameters.pipeCount,
+      parameters.pipeLength,
+      calculateBoundingBox(
+        parameters.bounds.x,
+        parameters.bounds.y,
+        parameters.bounds.z
+      ),
+      parameters.pipeTurnRandomness
+    ),
+    scene
+  );
+});
 
 // Render Loop
 const clock = new THREE.Clock();
@@ -105,7 +175,7 @@ const clock = new THREE.Clock();
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  pipeRenderer.renderNextSegments();
+  parameters.pipeRenderer.renderNextSegments();
 
   renderer.render(scene, camera);
   controls.update();
