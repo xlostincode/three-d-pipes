@@ -1,5 +1,16 @@
 import * as THREE from "three";
 
+export const DEFAULT_PARAMS = {
+  bounds: {
+    x: 25,
+    y: 25,
+    z: 25,
+  },
+  pipeCount: 10,
+  pipeLength: 200,
+  pipeTurnRandomness: 0.25,
+};
+
 export const DIRECTION_MAP = {
   FORWARD: new THREE.Vector3(-1, 0, 0),
   BACKWARD: new THREE.Vector3(1, 0, 0),

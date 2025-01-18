@@ -3,6 +3,7 @@ import "./style.css";
 import * as THREE from "three";
 import { Pane } from "tweakpane";
 import { createPipes, PipeRenderer } from "./pipe";
+import { DEFAULT_PARAMS } from "./const";
 
 const canvasElement = document.getElementById("webgl");
 
@@ -15,17 +16,6 @@ const canvasSize = {
   height: window.innerHeight,
 };
 
-const DEFAULTS = {
-  bounds: {
-    x: 25,
-    y: 25,
-    z: 25,
-  },
-  pipeCount: 10,
-  pipeLength: 200,
-  pipeTurnRandomness: 0.25,
-};
-
 // Scene
 const scene = new THREE.Scene();
 
@@ -34,7 +24,7 @@ const camera = new THREE.PerspectiveCamera(
   75,
   canvasSize.width / canvasSize.height
 );
-camera.position.x = Math.round(DEFAULTS.bounds.x * 0.5);
+camera.position.x = Math.round(DEFAULT_PARAMS.bounds.x * 0.5);
 scene.add(camera);
 
 // Lights
@@ -88,21 +78,21 @@ const calculateBoundingBox = (x: number, y: number, z: number) => {
 
 const parameters = {
   bounds: {
-    x: DEFAULTS.bounds.x,
-    y: DEFAULTS.bounds.y,
-    z: DEFAULTS.bounds.z,
+    x: DEFAULT_PARAMS.bounds.x,
+    y: DEFAULT_PARAMS.bounds.y,
+    z: DEFAULT_PARAMS.bounds.z,
   },
-  pipeCount: DEFAULTS.pipeCount,
-  pipeLength: DEFAULTS.pipeLength,
-  pipeTurnRandomness: DEFAULTS.pipeTurnRandomness,
+  pipeCount: DEFAULT_PARAMS.pipeCount,
+  pipeLength: DEFAULT_PARAMS.pipeLength,
+  pipeTurnRandomness: DEFAULT_PARAMS.pipeTurnRandomness,
   pipeRenderer: new PipeRenderer(
     createPipes(
       10,
       100,
       calculateBoundingBox(
-        DEFAULTS.bounds.x,
-        DEFAULTS.bounds.y,
-        DEFAULTS.bounds.z
+        DEFAULT_PARAMS.bounds.x,
+        DEFAULT_PARAMS.bounds.y,
+        DEFAULT_PARAMS.bounds.z
       )
     ),
     scene
@@ -150,7 +140,7 @@ const playButton = pane.addButton({
 });
 
 playButton.on("click", () => {
-  camera.position.set(Math.round(DEFAULTS.bounds.x * 0.5), 0, 0);
+  camera.position.set(Math.round(DEFAULT_PARAMS.bounds.x * 0.5), 0, 0);
 
   parameters.pipeRenderer.dispose();
 
