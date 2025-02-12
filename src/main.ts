@@ -191,8 +191,20 @@ playButton.on("click", () => {
 });
 
 copyButton.on("click", () => {
+  const url = window.location.href.split("?")[0];
+
   window.navigator.clipboard.writeText(
-    window.location.href + "?seed=" + parameters.seed
+    url +
+      "?seed=" +
+      parameters.seed +
+      "&b=" +
+      `${parameters.bounds.x},${parameters.bounds.y},${parameters.bounds.z}` +
+      "&pc=" +
+      `${parameters.pipeCount}` +
+      "&pl=" +
+      `${parameters.pipeLength}` +
+      "&tr=" +
+      `${parameters.pipeTurnRandomness}`
   );
 });
 

@@ -2,15 +2,99 @@ import * as THREE from "three";
 
 const searchParams = new URLSearchParams(window.location.search);
 
-export const DEFAULT_PARAMS = {
-  bounds: {
+const getBoundsFromParams = () => {
+  const defaultBounds = {
     x: 25,
     y: 25,
     z: 25,
-  },
-  pipeCount: 10,
-  pipeLength: 200,
-  pipeTurnRandomness: 0.25,
+  };
+
+  const boundsStr = searchParams.get("b");
+
+  const bounds = boundsStr?.split(",").map((value) => parseInt(value));
+
+  if (!bounds) {
+    return defaultBounds;
+  }
+
+  if (bounds.length !== 3) {
+    return defaultBounds;
+  }
+
+  bounds.forEach((value, index, array) => {
+    if (value < 5) {
+      array[index] = 5;
+    } else if (value > 50) {
+      array[index] = 50;
+    }
+  });
+
+  return {
+    x: bounds[0],
+    y: bounds[1],
+    z: bounds[2],
+  };
+};
+
+const getPipeCountFromParams = () => {
+  const defaultPipeCount = 10;
+
+  const pipeCountStr = searchParams.get("pc");
+
+  if (!pipeCountStr) {
+    return defaultPipeCount;
+  }
+
+  const pipeCount = parseInt(pipeCountStr);
+
+  if (!pipeCount || pipeCount < 0 || pipeCount > 50) {
+    return defaultPipeCount;
+  }
+
+  return pipeCount;
+};
+
+const getPipeLengthFromParams = () => {
+  const defaultPipeLength = 200;
+
+  const pipeLengthStr = searchParams.get("pl");
+
+  if (!pipeLengthStr) {
+    return defaultPipeLength;
+  }
+
+  const pipeLength = parseInt(pipeLengthStr);
+
+  if (!pipeLength || pipeLength < 2 || pipeLength > 1000) {
+    return defaultPipeLength;
+  }
+
+  return pipeLength;
+};
+
+const getTurnRandomnessFromParams = () => {
+  const defaultTurnRandomness = 0.25;
+
+  const turnRandomnessStr = searchParams.get("tr");
+
+  if (!turnRandomnessStr) {
+    return defaultTurnRandomness;
+  }
+
+  const turnRandomness = parseFloat(turnRandomnessStr);
+
+  if (!turnRandomness || turnRandomness < 0 || turnRandomness > 1) {
+    return defaultTurnRandomness;
+  }
+
+  return turnRandomness;
+};
+
+export const DEFAULT_PARAMS = {
+  bounds: getBoundsFromParams(),
+  pipeCount: getPipeCountFromParams(),
+  pipeLength: getPipeLengthFromParams(),
+  pipeTurnRandomness: getTurnRandomnessFromParams(),
   seed: searchParams.get("seed") || "lost-in-code",
   randomizeSeed: true,
 };
