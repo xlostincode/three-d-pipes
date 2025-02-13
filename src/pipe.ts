@@ -200,6 +200,24 @@ export class PipeRenderer {
 
   private _meshes: THREE.Mesh[];
   private _longestPipeLength: number;
+  pipeMaterial: THREE.MeshPhongMaterial;
+  _normalSegmentCount: number;
+  _jointSegmentCount: number;
+  _ballSegmentCount: number;
+  _segmentInstancedMesh: THREE.InstancedMesh<
+    THREE.CylinderGeometry,
+    THREE.MeshPhongMaterial,
+    THREE.InstancedMeshEventMap
+  >;
+  _dummy: THREE.Object3D<THREE.Object3DEventMap>;
+  pipeColors: THREE.Color[];
+  _segmentInstancedMeshIndex: number;
+  _ballInstancedMesh: THREE.InstancedMesh<
+    THREE.CylinderGeometry,
+    THREE.MeshPhongMaterial,
+    THREE.InstancedMeshEventMap
+  >;
+  private _ballInstancedMeshIndex: number;
 
   constructor(
     pipes: PipeSegment[][],
@@ -218,12 +236,8 @@ export class PipeRenderer {
       this.pipeRadius,
       1
     );
-    this.pipeMaterials = pipes.map(
-      (_) =>
-        new THREE.MeshPhongMaterial({
-          color: pickRandomFromArray(COLOR_LIST, rng),
-        })
-    );
+    this.pipeMaterial = new THREE.MeshPhongMaterial();
+    this.pipeColors = pipes.map(() => pickRandomFromArray(COLOR_LIST, rng));
 
     this.jointBallGeometry = new THREE.SphereGeometry(
       this.jointBallRadius,
@@ -238,6 +252,46 @@ export class PipeRenderer {
 
     this._meshes = [];
     this._longestPipeLength = Math.max(...pipes.map((pipe) => pipe.length));
+
+    this._normalSegmentCount = 0;
+    this._jointSegmentCount = 0;
+    this._ballSegmentCount = 0;
+
+    for (const pipe of this.pipes) {
+      for (let index = 0; index < pipe.length - 1; index++) {
+        if (pipe[index].direction.equals(pipe[index + 1].direction)) {
+          this._normalSegmentCount += 1;
+        } else {
+          this._normalSegmentCount += 2;
+          this._ballSegmentCount += 1;
+        }
+      }
+    }
+
+    console.log(
+      this._normalSegmentCount,
+      this._jointSegmentCount,
+      this._ballSegmentCount
+    );
+
+    this._segmentInstancedMesh = new THREE.InstancedMesh(
+      this.pipeGeometry,
+      this.pipeMaterial,
+      this._normalSegmentCount
+    );
+    this._segmentInstancedMeshIndex = 0;
+
+    this._ballInstancedMesh = new THREE.InstancedMesh(
+      this.jointBallGeometry,
+      this.pipeMaterial,
+      this._ballSegmentCount
+    );
+    this._ballInstancedMeshIndex = 0;
+
+    this._dummy = new THREE.Object3D();
+
+    this.scene.add(this._segmentInstancedMesh);
+    this.scene.add(this._ballInstancedMesh);
   }
 
   renderNextSegments() {
@@ -263,61 +317,91 @@ export class PipeRenderer {
         nextSegmentDirection &&
         !segment.direction.equals(nextSegmentDirection)
       ) {
-        if (!segment.direction.equals(nextSegmentDirection)) {
-          const jointBallMesh = new THREE.Mesh(
-            this.jointBallGeometry,
-            this.pipeMaterials[pipeIndex]
-          );
+        const color = this.pipeColors[pipeIndex];
 
-          const jointPipeOneMesh = new THREE.Mesh(
-            this.jointPipeGeometry,
-            this.pipeMaterials[pipeIndex]
-          );
+        // Ball joint
+        this._dummy.scale.set(1, 1, 1);
+        this._dummy.position.copy(segment.position);
+        this._dummy.updateMatrix();
 
-          const jointPipeTwoMesh = new THREE.Mesh(
-            this.jointPipeGeometry,
-            this.pipeMaterials[pipeIndex]
-          );
+        this._ballInstancedMesh.setMatrixAt(
+          this._ballInstancedMeshIndex,
+          this._dummy.matrix
+        );
+        this._ballInstancedMesh.setColorAt(this._ballInstancedMeshIndex, color);
+        this._ballInstancedMeshIndex++;
 
-          jointBallMesh.position.copy(segment.position);
+        // Segment one
+        this._dummy.scale.set(0.5, 0.5, 0.5);
+        this._dummy.position.copy(segment.position);
+        this._dummy.position.add(
+          segmentDirection
+            .clone()
+            .multiply(new THREE.Vector3(-0.25, -0.25, -0.25))
+        );
+        this._dummy.rotation.copy(getRotationFromDirection(segmentDirection));
+        this._dummy.updateMatrix();
 
-          jointPipeOneMesh.position.copy(segment.position);
-          jointPipeTwoMesh.position.copy(segment.position);
+        this._segmentInstancedMesh.setMatrixAt(
+          this._segmentInstancedMeshIndex,
+          this._dummy.matrix
+        );
+        this._segmentInstancedMeshIndex++;
 
-          jointPipeOneMesh.rotation.copy(
-            getRotationFromDirection(segmentDirection)
-          );
-          jointPipeTwoMesh.rotation.copy(
-            getRotationFromDirection(nextSegmentDirection)
-          );
-
-          jointPipeOneMesh.position.add(
-            segmentDirection
-              .clone()
-              .multiply(new THREE.Vector3(-0.25, -0.25, -0.25))
-          );
-          jointPipeTwoMesh.position.add(
+        // Segment two
+        this._dummy.scale.set(0.5, 0.5, 0.5);
+        this._dummy.position.copy(segment.position);
+        this._dummy.position
+          .add(
             nextSegmentDirection
               .clone()
               .multiply(new THREE.Vector3(0.25, 0.25, 0.25))
-          );
+          )
+          .clone()
+          .multiply(new THREE.Vector3(0.25, 0.25, 0.25));
+        this._dummy.rotation.copy(
+          getRotationFromDirection(nextSegmentDirection)
+        );
+        this._dummy.updateMatrix();
 
-          this.scene.add(jointBallMesh, jointPipeOneMesh, jointPipeTwoMesh);
-          this._meshes.push(jointBallMesh, jointPipeOneMesh, jointPipeTwoMesh);
+        this._segmentInstancedMesh.setMatrixAt(
+          this._segmentInstancedMeshIndex,
+          this._dummy.matrix
+        );
+        this._segmentInstancedMeshIndex++;
+
+        this._segmentInstancedMesh.instanceMatrix.needsUpdate = true;
+        if (this._segmentInstancedMesh.instanceColor) {
+          this._segmentInstancedMesh.instanceColor.needsUpdate = true;
+        }
+        this._ballInstancedMesh.instanceMatrix.needsUpdate = true;
+        if (this._ballInstancedMesh.instanceColor) {
+          this._ballInstancedMesh.instanceColor.needsUpdate = true;
         }
       } else {
-        const pipeSegmentMesh = new THREE.Mesh(
-          this.pipeGeometry,
-          this.pipeMaterials[pipeIndex]
+        const color = this.pipeColors[pipeIndex];
+        const rotation = getRotationFromDirection(segmentDirection);
+
+        this._dummy.scale.set(1, 1, 1);
+        this._dummy.rotation.copy(rotation);
+        this._dummy.position.copy(segment.position);
+        this._dummy.updateMatrix();
+
+        this._segmentInstancedMesh.setMatrixAt(
+          this._segmentInstancedMeshIndex,
+          this._dummy.matrix
+        );
+        this._segmentInstancedMesh.setColorAt(
+          this._segmentInstancedMeshIndex,
+          color
         );
 
-        const rotation = getRotationFromDirection(segmentDirection);
-        pipeSegmentMesh.rotation.copy(rotation);
+        this._segmentInstancedMesh.instanceMatrix.needsUpdate = true;
+        if (this._segmentInstancedMesh.instanceColor) {
+          this._segmentInstancedMesh.instanceColor.needsUpdate = true;
+        }
 
-        pipeSegmentMesh.position.copy(segment.position);
-
-        this.scene.add(pipeSegmentMesh);
-        this._meshes.push(pipeSegmentMesh);
+        this._segmentInstancedMeshIndex++;
       }
     }
 
