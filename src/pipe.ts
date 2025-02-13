@@ -149,7 +149,6 @@ export const createPipes = (
   turnRandomness: number = 0.5,
   rng: SeededRandomNumberGenerator
 ) => {
-  console.log(count, length);
   const existingSegmentPositions = new Set<string>();
 
   const pipes: PipeSegment[][] = [];
@@ -192,32 +191,28 @@ export class PipeRenderer {
 
   private pipeRadius: number;
   private pipeGeometry: THREE.CylinderGeometry;
-  private pipeMaterials: THREE.MeshPhongMaterial[];
 
   private jointBallRadius: number;
   private jointBallGeometry: THREE.SphereGeometry;
-  private jointPipeGeometry: THREE.CylinderGeometry;
 
-  private _meshes: THREE.Mesh[];
-  private _longestPipeLength: number;
-  pipeMaterial: THREE.MeshPhongMaterial;
-  _normalSegmentCount: number;
-  _jointSegmentCount: number;
-  _ballSegmentCount: number;
-  _segmentInstancedMesh: THREE.InstancedMesh<
+  private longestPipeLength: number;
+  private pipeMaterial: THREE.MeshPhongMaterial;
+  private normalSegmentCount: number;
+  private ballSegmentCount: number;
+  private segmentInstancedMesh: THREE.InstancedMesh<
     THREE.CylinderGeometry,
     THREE.MeshPhongMaterial,
     THREE.InstancedMeshEventMap
   >;
-  _dummy: THREE.Object3D<THREE.Object3DEventMap>;
-  pipeColors: THREE.Color[];
-  _segmentInstancedMeshIndex: number;
-  _ballInstancedMesh: THREE.InstancedMesh<
-    THREE.CylinderGeometry,
+  private dummy: THREE.Object3D<THREE.Object3DEventMap>;
+  private pipeColors: THREE.Color[];
+  private segmentInstancedMeshIndex: number;
+  private ballInstancedMesh: THREE.InstancedMesh<
+    THREE.SphereGeometry,
     THREE.MeshPhongMaterial,
     THREE.InstancedMeshEventMap
   >;
-  private _ballInstancedMeshIndex: number;
+  private ballInstancedMeshIndex: number;
 
   constructor(
     pipes: PipeSegment[][],
@@ -244,58 +239,53 @@ export class PipeRenderer {
       16,
       16
     );
-    this.jointPipeGeometry = new THREE.CylinderGeometry(
-      this.pipeRadius,
-      this.pipeRadius,
-      0.5
-    );
 
-    this._meshes = [];
-    this._longestPipeLength = Math.max(...pipes.map((pipe) => pipe.length));
+    this.longestPipeLength = Math.max(...pipes.map((pipe) => pipe.length));
 
-    this._normalSegmentCount = 0;
-    this._jointSegmentCount = 0;
-    this._ballSegmentCount = 0;
-
+    // Count the number of meshes for use in InstancedMesh
+    this.normalSegmentCount = 0;
+    this.ballSegmentCount = 0;
     for (const pipe of this.pipes) {
-      for (let index = 0; index < pipe.length - 1; index++) {
-        if (pipe[index].direction.equals(pipe[index + 1].direction)) {
-          this._normalSegmentCount += 1;
-        } else {
-          this._normalSegmentCount += 2;
-          this._ballSegmentCount += 1;
+      for (let index = 0; index < pipe.length; index++) {
+        const currentSegment = pipe[index];
+        const nextSegment = pipe[index + 1];
+
+        this.normalSegmentCount += 1;
+
+        if (
+          nextSegment &&
+          !currentSegment.direction.equals(nextSegment.direction)
+        ) {
+          this.normalSegmentCount += 1;
+          this.ballSegmentCount += 1;
         }
       }
     }
 
-    console.log(
-      this._normalSegmentCount,
-      this._jointSegmentCount,
-      this._ballSegmentCount
-    );
-
-    this._segmentInstancedMesh = new THREE.InstancedMesh(
+    // Instanced mesh for segments
+    this.segmentInstancedMesh = new THREE.InstancedMesh(
       this.pipeGeometry,
       this.pipeMaterial,
-      this._normalSegmentCount
+      this.normalSegmentCount
     );
-    this._segmentInstancedMeshIndex = 0;
+    this.segmentInstancedMeshIndex = 0;
 
-    this._ballInstancedMesh = new THREE.InstancedMesh(
+    // Instanced mesh for ball joints
+    this.ballInstancedMesh = new THREE.InstancedMesh(
       this.jointBallGeometry,
       this.pipeMaterial,
-      this._ballSegmentCount
+      this.ballSegmentCount
     );
-    this._ballInstancedMeshIndex = 0;
+    this.ballInstancedMeshIndex = 0;
 
-    this._dummy = new THREE.Object3D();
+    this.dummy = new THREE.Object3D();
 
-    this.scene.add(this._segmentInstancedMesh);
-    this.scene.add(this._ballInstancedMesh);
+    this.scene.add(this.segmentInstancedMesh);
+    this.scene.add(this.ballInstancedMesh);
   }
 
   renderNextSegments() {
-    if (this.currentSegmentIndex >= this._longestPipeLength) {
+    if (this.currentSegmentIndex >= this.longestPipeLength) {
       return;
     }
 
@@ -320,38 +310,42 @@ export class PipeRenderer {
         const color = this.pipeColors[pipeIndex];
 
         // Ball joint
-        this._dummy.scale.set(1, 1, 1);
-        this._dummy.position.copy(segment.position);
-        this._dummy.updateMatrix();
+        this.dummy.scale.set(1, 1, 1);
+        this.dummy.position.copy(segment.position);
+        this.dummy.updateMatrix();
 
-        this._ballInstancedMesh.setMatrixAt(
-          this._ballInstancedMeshIndex,
-          this._dummy.matrix
+        this.ballInstancedMesh.setMatrixAt(
+          this.ballInstancedMeshIndex,
+          this.dummy.matrix
         );
-        this._ballInstancedMesh.setColorAt(this._ballInstancedMeshIndex, color);
-        this._ballInstancedMeshIndex++;
+        this.ballInstancedMesh.setColorAt(this.ballInstancedMeshIndex, color);
+        this.ballInstancedMeshIndex++;
 
         // Segment one
-        this._dummy.scale.set(0.5, 0.5, 0.5);
-        this._dummy.position.copy(segment.position);
-        this._dummy.position.add(
+        this.dummy.scale.set(1, 0.5, 1);
+        this.dummy.position.copy(segment.position);
+        this.dummy.position.add(
           segmentDirection
             .clone()
             .multiply(new THREE.Vector3(-0.25, -0.25, -0.25))
         );
-        this._dummy.rotation.copy(getRotationFromDirection(segmentDirection));
-        this._dummy.updateMatrix();
+        this.dummy.rotation.copy(getRotationFromDirection(segmentDirection));
+        this.dummy.updateMatrix();
 
-        this._segmentInstancedMesh.setMatrixAt(
-          this._segmentInstancedMeshIndex,
-          this._dummy.matrix
+        this.segmentInstancedMesh.setMatrixAt(
+          this.segmentInstancedMeshIndex,
+          this.dummy.matrix
         );
-        this._segmentInstancedMeshIndex++;
+        this.segmentInstancedMesh.setColorAt(
+          this.segmentInstancedMeshIndex,
+          color
+        );
+        this.segmentInstancedMeshIndex++;
 
         // Segment two
-        this._dummy.scale.set(0.5, 0.5, 0.5);
-        this._dummy.position.copy(segment.position);
-        this._dummy.position
+        this.dummy.scale.set(1, 0.5, 1);
+        this.dummy.position.copy(segment.position);
+        this.dummy.position
           .add(
             nextSegmentDirection
               .clone()
@@ -359,49 +353,53 @@ export class PipeRenderer {
           )
           .clone()
           .multiply(new THREE.Vector3(0.25, 0.25, 0.25));
-        this._dummy.rotation.copy(
+        this.dummy.rotation.copy(
           getRotationFromDirection(nextSegmentDirection)
         );
-        this._dummy.updateMatrix();
+        this.dummy.updateMatrix();
 
-        this._segmentInstancedMesh.setMatrixAt(
-          this._segmentInstancedMeshIndex,
-          this._dummy.matrix
+        this.segmentInstancedMesh.setMatrixAt(
+          this.segmentInstancedMeshIndex,
+          this.dummy.matrix
         );
-        this._segmentInstancedMeshIndex++;
+        this.segmentInstancedMesh.setColorAt(
+          this.segmentInstancedMeshIndex,
+          color
+        );
+        this.segmentInstancedMeshIndex++;
 
-        this._segmentInstancedMesh.instanceMatrix.needsUpdate = true;
-        if (this._segmentInstancedMesh.instanceColor) {
-          this._segmentInstancedMesh.instanceColor.needsUpdate = true;
+        this.segmentInstancedMesh.instanceMatrix.needsUpdate = true;
+        if (this.segmentInstancedMesh.instanceColor) {
+          this.segmentInstancedMesh.instanceColor.needsUpdate = true;
         }
-        this._ballInstancedMesh.instanceMatrix.needsUpdate = true;
-        if (this._ballInstancedMesh.instanceColor) {
-          this._ballInstancedMesh.instanceColor.needsUpdate = true;
+        this.ballInstancedMesh.instanceMatrix.needsUpdate = true;
+        if (this.ballInstancedMesh.instanceColor) {
+          this.ballInstancedMesh.instanceColor.needsUpdate = true;
         }
       } else {
         const color = this.pipeColors[pipeIndex];
         const rotation = getRotationFromDirection(segmentDirection);
 
-        this._dummy.scale.set(1, 1, 1);
-        this._dummy.rotation.copy(rotation);
-        this._dummy.position.copy(segment.position);
-        this._dummy.updateMatrix();
+        this.dummy.scale.set(1, 1, 1);
+        this.dummy.rotation.copy(rotation);
+        this.dummy.position.copy(segment.position);
+        this.dummy.updateMatrix();
 
-        this._segmentInstancedMesh.setMatrixAt(
-          this._segmentInstancedMeshIndex,
-          this._dummy.matrix
+        this.segmentInstancedMesh.setMatrixAt(
+          this.segmentInstancedMeshIndex,
+          this.dummy.matrix
         );
-        this._segmentInstancedMesh.setColorAt(
-          this._segmentInstancedMeshIndex,
+        this.segmentInstancedMesh.setColorAt(
+          this.segmentInstancedMeshIndex,
           color
         );
 
-        this._segmentInstancedMesh.instanceMatrix.needsUpdate = true;
-        if (this._segmentInstancedMesh.instanceColor) {
-          this._segmentInstancedMesh.instanceColor.needsUpdate = true;
+        this.segmentInstancedMesh.instanceMatrix.needsUpdate = true;
+        if (this.segmentInstancedMesh.instanceColor) {
+          this.segmentInstancedMesh.instanceColor.needsUpdate = true;
         }
 
-        this._segmentInstancedMeshIndex++;
+        this.segmentInstancedMeshIndex++;
       }
     }
 
@@ -409,13 +407,11 @@ export class PipeRenderer {
   }
 
   dispose() {
-    this._meshes.forEach((mesh) => {
-      this.scene.remove(mesh);
-    });
-    this._meshes.forEach((mesh) => {
-      // @ts-expect-error - Material will not be an array so its safe to call dispose directly
-      mesh.material.dispose();
-      mesh.geometry.dispose();
-    });
+    this.scene.remove(this.segmentInstancedMesh);
+    this.scene.remove(this.ballInstancedMesh);
+
+    this.pipeMaterial.dispose();
+    this.pipeGeometry.dispose();
+    this.jointBallGeometry.dispose();
   }
 }
