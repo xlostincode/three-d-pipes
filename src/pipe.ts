@@ -268,6 +268,7 @@ export class PipeRenderer {
       this.pipeMaterial,
       this.normalSegmentCount
     );
+    this.segmentInstancedMesh.count = 0;
     this.segmentInstancedMeshIndex = 0;
 
     // Instanced mesh for ball joints
@@ -276,6 +277,7 @@ export class PipeRenderer {
       this.pipeMaterial,
       this.ballSegmentCount
     );
+    this.ballInstancedMesh.count = 0;
     this.ballInstancedMeshIndex = 0;
 
     this.dummy = new THREE.Object3D();
@@ -310,6 +312,8 @@ export class PipeRenderer {
         const color = this.pipeColors[pipeIndex];
 
         // Ball joint
+        this.ballInstancedMesh.count += 1;
+
         this.dummy.scale.set(1, 1, 1);
         this.dummy.position.copy(segment.position);
         this.dummy.updateMatrix();
@@ -322,6 +326,8 @@ export class PipeRenderer {
         this.ballInstancedMeshIndex++;
 
         // Segment one
+        this.segmentInstancedMesh.count += 1;
+
         this.dummy.scale.set(1, 0.5, 1);
         this.dummy.position.copy(segment.position);
         this.dummy.position.add(
@@ -343,6 +349,8 @@ export class PipeRenderer {
         this.segmentInstancedMeshIndex++;
 
         // Segment two
+        this.segmentInstancedMesh.count += 1;
+
         this.dummy.scale.set(1, 0.5, 1);
         this.dummy.position.copy(segment.position);
         this.dummy.position
@@ -379,6 +387,8 @@ export class PipeRenderer {
       } else {
         const color = this.pipeColors[pipeIndex];
         const rotation = getRotationFromDirection(segmentDirection);
+
+        this.segmentInstancedMesh.count += 1;
 
         this.dummy.scale.set(1, 1, 1);
         this.dummy.rotation.copy(rotation);
